@@ -37,3 +37,6 @@ export type { DateColumnOptions, DateKeysOf } from './columns/dateColumn.js';
 
 export { selectColumn } from './columns/selectColumn.js';
 export type { SelectColumnOptions, SelectOption } from './columns/selectColumn.js';
+
+export { customColumn } from './columns/customColumn.js';
+export type { CustomColumnOptions } from './columns/customColumn.js';
