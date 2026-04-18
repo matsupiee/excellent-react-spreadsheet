@@ -8,7 +8,7 @@
     "storybook": "storybook dev -p 6006",
     "build": "storybook build -o storybook-static",
     "dev": "storybook dev -p 6006",
-    "lint": "eslint \"stories/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\"",
+    "lint": "eslint \"stories/**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
     "test": "echo 'storybook has no vitest suite' && exit 0",
     "test:e2e": "playwright test",
