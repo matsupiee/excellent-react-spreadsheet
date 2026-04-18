@@ -122,15 +122,15 @@ packages/formula/src/
 
 要件 `api-draft.md` の各節 → 実装ファイル：
 
-| api-draft 節 | 実装箇所 |
-|---|---|
-| §1 `<Spreadsheet>` Props | `Spreadsheet/Spreadsheet.tsx` + `types.ts` |
-| §2.1 列プリセット | `columns/*.ts` |
-| §2.2 カスタム列（`ColumnDef`） | `types.ts` |
-| §3 Undo/Redo | `history/*.ts` |
-| §4 選択範囲 / キーボード | `useSpreadsheet/selection.ts`, `useSpreadsheet/keyboard.ts` |
-| §5 フォーミュラ API | `packages/formula/src/index.ts` |
-| §6 Headless フック | `useSpreadsheet/index.ts` |
+| api-draft 節                   | 実装箇所                                                    |
+| ------------------------------ | ----------------------------------------------------------- |
+| §1 `<Spreadsheet>` Props       | `Spreadsheet/Spreadsheet.tsx` + `types.ts`                  |
+| §2.1 列プリセット              | `columns/*.ts`                                              |
+| §2.2 カスタム列（`ColumnDef`） | `types.ts`                                                  |
+| §3 Undo/Redo                   | `history/*.ts`                                              |
+| §4 選択範囲 / キーボード       | `useSpreadsheet/selection.ts`, `useSpreadsheet/keyboard.ts` |
+| §5 フォーミュラ API            | `packages/formula/src/index.ts`                             |
+| §6 Headless フック             | `useSpreadsheet/index.ts`                                   |
 
 ---
 

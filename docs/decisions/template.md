@@ -29,9 +29,11 @@
 ## Alternatives considered
 
 ### 案 A（採用）
+
 ...
 
 ### 案 B
+
 ...
 
 ## References

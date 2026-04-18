@@ -38,6 +38,7 @@
 `packages/formula` の拡張・バグ修正。
 
 **独立制約:**
+
 - 外部ライブラリ依存を**一切追加しない**（zero-dep を維持）
 - コア（`packages/core`）には依存しない（参照は型情報のみ）
 - `docs/decisions/formula-grammar.md` の BNF を正とする
@@ -55,11 +56,13 @@
 ## Role: Tester（テスト追加・修正）
 
 **基本方針:**
+
 - 実装の「ふるまい」をテストする。内部実装詳細に密結合させない。
 - `data-testid` は UI が不安定な時だけ使う（まず role / label で引く）
 - 乱数は seed を固定する（`@faker-js/faker` なら `faker.seed(42)`）
 
 種類別:
+
 - **Unit（Vitest）**: `<file>.test.ts` を同階層に置く
 - **Integration**: `packages/core/test/integration/` に集約
 - **E2E（Playwright）**: `e2e/` 直下、ケース 1 ファイル 1 シナリオ
@@ -71,16 +74,19 @@
 **目的:** コードベースのエントロピーを下げる。AI 生成コードは冗長化しやすいため、定期的に回収する。
 
 トリガ:
+
 - 同種の重複が 3 箇所以上ある
 - ファイルが 400 行を超えた
 - テストが遅くなった（100ms → 閾値超過）
 
 **やってよいこと:**
+
 - 重複の抽出（ただし「3 回見たら抽象化」。2 回では抽象化しない）
 - 型の整理・再利用
 - 死んでいるコードの削除（grep で参照 0 を確認してから）
 
 **やってはいけないこと:**
+
 - public API の破壊的変更（メジャー番号上げる話に戻る）
 - 抽象化のための抽象化（将来のために作る DI や interface）
 
@@ -104,6 +110,7 @@ commit 前に以下を自問する：
 **単位:** `apps/storybook/stories/bench/*.stories.tsx` のベンチ story を使う。
 
 計測項目:
+
 - 初回描画時間（React Profiler）
 - スクロール FPS（`performance.now()` + rAF）
 - 1 セル変更 → 再レンダ時間

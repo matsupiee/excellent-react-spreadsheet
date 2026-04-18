@@ -27,7 +27,7 @@ type SpreadsheetProps<Row> = {
   // --- レイアウト（controlled） ---
   height?: number | `${number}px` | 'auto' | 'parent';
   maxHeight?: number;
-  columnWidths?: Record<string, number>;         // controlled
+  columnWidths?: Record<string, number>; // controlled
   onColumnWidthsChange?: (w: Record<string, number>) => void;
 
   // --- 選択状態（controlled） ---
@@ -37,9 +37,9 @@ type SpreadsheetProps<Row> = {
   onActiveCellChange?: (c: CellAddress | null) => void;
 
   // --- 機能トグル ---
-  undoRedo?: boolean;                             // default: true
-  copyPaste?: boolean;                            // default: true
-  rowReorder?: boolean;                           // default: false
+  undoRedo?: boolean; // default: true
+  copyPaste?: boolean; // default: true
+  rowReorder?: boolean; // default: false
   addRows?: boolean | { onAdd: (count: number) => void };
 
   // --- イベント ---
@@ -48,7 +48,7 @@ type SpreadsheetProps<Row> = {
   onPaste?: (e: PasteEvent<Row>) => void | Promise<void>;
 
   // --- フォーミュラ（opt-in） ---
-  formula?: FormulaEngine;                        // from 'excellent-react-spreadsheet/formula'
+  formula?: FormulaEngine; // from 'excellent-react-spreadsheet/formula'
 
   // --- スタイル ---
   className?: string;
@@ -106,9 +106,9 @@ type ColumnDef<Row, Value = unknown> = {
 ```ts
 type EditorContext<Row, Value> = {
   value: Value;
-  onChange: (next: Value) => void;  // コミット待ち
-  onCommit: () => void;              // 値を確定し selection を次へ
-  onCancel: () => void;              // 変更を破棄
+  onChange: (next: Value) => void; // コミット待ち
+  onCommit: () => void; // 値を確定し selection を次へ
+  onCancel: () => void; // 変更を破棄
   row: Row;
   rowIndex: number;
   address: CellAddress;
@@ -134,7 +134,7 @@ type HistoryEntry = {
   id: string;
   timestamp: number;
   patches: CellPatch[];
-  label?: string;  // "paste 5 cells" 等、UI 向けラベル
+  label?: string; // "paste 5 cells" 等、UI 向けラベル
 };
 ```
 

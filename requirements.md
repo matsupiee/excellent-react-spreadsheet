@@ -9,15 +9,15 @@
 
 既存の React 向けスプレッドシートライブラリ（特に `react-datasheet-grid`）には以下の構造的な問題がある：
 
-| # | 既存の痛点 | 本ライブラリで解決したい形 |
-|---|---|---|
-| 1 | カスタム Select が Chakra UI/MUI 等と統合できず、Portal・外部クリック検出・キーボード操作を全部自前実装する必要がある | 任意の UI ライブラリのコンポーネントをそのまま埋め込める「ヘッドレス」なセルエディタ API |
-| 2 | `rowClassName` 等のコールバックで最新 state が取れず `Ref` コピーの workaround が必要 | 普通の React の props/closure で最新値が参照できる設計 |
-| 3 | `height` 必須で `ResizeObserver` を使った高さ自動計算を各呼び出し側で書く必要 | `height="auto"` / 親コンテナ追従をデフォルト提供 |
-| 4 | `floatColumn` / `intColumn` 相当がなく、`formatBlurredInput` / `parseUserInput` を毎回手書き | 数値・float・int・date・select・checkbox 等の型付きプリセット列を標準同梱 |
-| 5 | Undo/Redo が無く、JSON ディープコピーによる手動 history 管理が必要 | ビルトイン history（差分ベース） |
-| 6 | セル範囲選択のキーボード拡張が capture フェーズ介入でしか実現できない | `onKeyDown` / `useSelection` で拡張可能な公式 API |
-| 7 | 行 key 管理が曖昧で、強制再マウントのハックが必要 | `getRowKey` を明示指定する安定キー戦略 |
+| #   | 既存の痛点                                                                                                            | 本ライブラリで解決したい形                                                               |
+| --- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| 1   | カスタム Select が Chakra UI/MUI 等と統合できず、Portal・外部クリック検出・キーボード操作を全部自前実装する必要がある | 任意の UI ライブラリのコンポーネントをそのまま埋め込める「ヘッドレス」なセルエディタ API |
+| 2   | `rowClassName` 等のコールバックで最新 state が取れず `Ref` コピーの workaround が必要                                 | 普通の React の props/closure で最新値が参照できる設計                                   |
+| 3   | `height` 必須で `ResizeObserver` を使った高さ自動計算を各呼び出し側で書く必要                                         | `height="auto"` / 親コンテナ追従をデフォルト提供                                         |
+| 4   | `floatColumn` / `intColumn` 相当がなく、`formatBlurredInput` / `parseUserInput` を毎回手書き                          | 数値・float・int・date・select・checkbox 等の型付きプリセット列を標準同梱                |
+| 5   | Undo/Redo が無く、JSON ディープコピーによる手動 history 管理が必要                                                    | ビルトイン history（差分ベース）                                                         |
+| 6   | セル範囲選択のキーボード拡張が capture フェーズ介入でしか実現できない                                                 | `onKeyDown` / `useSelection` で拡張可能な公式 API                                        |
+| 7   | 行 key 管理が曖昧で、強制再マウントのハックが必要                                                                     | `getRowKey` を明示指定する安定キー戦略                                                   |
 
 ---
 
@@ -60,6 +60,7 @@
 ### 5.1 必須機能（v1.0）
 
 #### 編集・操作
+
 - [ ] セル編集（Enter / F2 / ダブルクリック / 直接入力）
 - [ ] セル範囲選択（ドラッグ / Shift+矢印 / Cmd+Shift+矢印）
 - [ ] コピー&ペースト（TSV / CSV / Excel 互換）
@@ -68,6 +69,7 @@
 - [ ] フィルコピー（選択範囲の右下ハンドル）
 
 #### 列プリセット（標準同梱）
+
 - [ ] `textColumn`
 - [ ] `intColumn` / `floatColumn`（フォーマッタ・パーサ込み）
 - [ ] `checkboxColumn`
@@ -76,18 +78,21 @@
 - [ ] `customColumn`（任意の React コンポーネントをエディタ/ビューアとして指定）
 
 #### レイアウト
+
 - [ ] 仮想スクロール（行方向、列方向は v1.1 以降）
 - [ ] `height="auto"` / `maxHeight` / `parentFill` モード
 - [ ] 列幅リサイズ
 - [ ] ヘッダー固定 / 左端列固定（sticky）
 
 #### 統合
+
 - [ ] `getRowKey: (row, index) => string` を必須プロップに
 - [ ] `onChange(rows, operations)` — 差分情報も受け取れる
 - [ ] `onKeyDown`, `onSelectionChange`, `onCellBlur` などのフック
 - [ ] `ref.focus()`, `ref.setSelection()`, `ref.undo()` などの命令型 API
 
 #### フォーミュラ（v1.0 スコープ）
+
 - [ ] セル参照（`=A1`, `=A1+B1`）
 - [ ] 範囲参照（`=SUM(A1:A10)`）
 - [ ] 基本関数: `SUM` / `AVERAGE` / `MIN` / `MAX` / `COUNT` / `IF` / `AND` / `OR` / `ROUND`
@@ -113,18 +118,18 @@
 
 ## 6. 非機能要件
 
-| 項目 | 目標値 |
-|---|---|
-| バンドルサイズ（core, gzipped） | ≤ 30 kB |
-| バンドルサイズ（formula, gzipped） | ≤ 15 kB 追加 |
-| ランタイム依存 | `react` / `react-dom` のみ（peer）。formula も zero-dep |
-| 初回描画（1000 行 × 10 列） | ≤ 100 ms |
-| スクロール FPS（10,000 行） | ≥ 55 fps |
-| フォーミュラ再計算（1,000 式・1 セル変更） | ≤ 16 ms |
-| 型安全性 | `strict: true` で警告ゼロ |
-| ブラウザ対応 | 最新 Chrome / Safari / Firefox / Edge の直近 2 バージョン |
-| React 対応 | 18.x / 19.x |
-| ツリーシェイカブル | 列プリセット・フォーミュラは個別 import で分割可能 |
+| 項目                                       | 目標値                                                    |
+| ------------------------------------------ | --------------------------------------------------------- |
+| バンドルサイズ（core, gzipped）            | ≤ 30 kB                                                   |
+| バンドルサイズ（formula, gzipped）         | ≤ 15 kB 追加                                              |
+| ランタイム依存                             | `react` / `react-dom` のみ（peer）。formula も zero-dep   |
+| 初回描画（1000 行 × 10 列）                | ≤ 100 ms                                                  |
+| スクロール FPS（10,000 行）                | ≥ 55 fps                                                  |
+| フォーミュラ再計算（1,000 式・1 セル変更） | ≤ 16 ms                                                   |
+| 型安全性                                   | `strict: true` で警告ゼロ                                 |
+| ブラウザ対応                               | 最新 Chrome / Safari / Firefox / Edge の直近 2 バージョン |
+| React 対応                                 | 18.x / 19.x                                               |
+| ツリーシェイカブル                         | 列プリセット・フォーミュラは個別 import で分割可能        |
 
 ### 6.1 スタイリング戦略
 
@@ -148,6 +153,7 @@
 詳細は **[`api-draft.md`](./api-draft.md)** を参照（別文書に切り出し）。
 
 要点:
+
 - `<Spreadsheet>` / `useSpreadsheet()` の 2 層構成
 - 列プリセット: `textColumn` / `intColumn` / `floatColumn` / `checkboxColumn` / `dateColumn` / `selectColumn` / 完全カスタム
 - フォーミュラは `excellent-react-spreadsheet/formula` から `createFormulaEngine()` を import して props に渡す（opt-in）
@@ -167,30 +173,30 @@
 
 ## 9. 決定事項（2026-04-18）
 
-| 項目 | 決定 |
-|---|---|
-| ライセンス | MIT |
-| パッケージ名 | `excellent-react-spreadsheet` |
-| スタイリング | Tailwind preset を正とする（非 Tailwind 向けには CSS ファイル同梱） |
-| フォーミュラ対応 | **対応する**（v1.0 スコープ内 / 別エントリポイントで opt-in） |
-| テスト・ベンチマーク | Storybook + Playwright + Vitest |
-| 移行ガイド | 同梱しない |
-| モノレポ構成 | **Turborepo**（pnpm workspaces + `turbo` でタスクオーケストレーション） |
-| フォーミュラパーサ | **自前実装（小さく保つ）** — hyperformula 等の既存ライブラリには依存しない |
-| Undo 差分表現 | **JSON Patch ライクな patch 配列 + coalescing**（詳細は §9.1） |
-| UI state | **controlled のみ**（uncontrolled モードは提供しない） |
-| API 詳細 | [`api-draft.md`](./api-draft.md) に切り出し済み |
+| 項目                 | 決定                                                                       |
+| -------------------- | -------------------------------------------------------------------------- |
+| ライセンス           | MIT                                                                        |
+| パッケージ名         | `excellent-react-spreadsheet`                                              |
+| スタイリング         | Tailwind preset を正とする（非 Tailwind 向けには CSS ファイル同梱）        |
+| フォーミュラ対応     | **対応する**（v1.0 スコープ内 / 別エントリポイントで opt-in）              |
+| テスト・ベンチマーク | Storybook + Playwright + Vitest                                            |
+| 移行ガイド           | 同梱しない                                                                 |
+| モノレポ構成         | **Turborepo**（pnpm workspaces + `turbo` でタスクオーケストレーション）    |
+| フォーミュラパーサ   | **自前実装（小さく保つ）** — hyperformula 等の既存ライブラリには依存しない |
+| Undo 差分表現        | **JSON Patch ライクな patch 配列 + coalescing**（詳細は §9.1）             |
+| UI state             | **controlled のみ**（uncontrolled モードは提供しない）                     |
+| API 詳細             | [`api-draft.md`](./api-draft.md) に切り出し済み                            |
 
 ### 9.1 Undo 差分表現を patch 形式に決めた理由
 
-| 観点 | patch 形式（採用） | command パターン |
-|---|---|---|
-| メモリ | ◎ 変更セルのみ保持。既存の `JSON.parse(JSON.stringify(rows))` 痛点を直接解消 | △ コマンドの引数とクロージャ次第で膨らむ |
-| 連続入力の統合 | ◎ 同一セル patch を coalesce するだけ | △ コマンドのマージ規則を個別設計 |
-| ペースト・フィルコピー | ◎ 複数 patch を 1 エントリにまとめるだけ | ○ BatchCommand を作る必要 |
-| シリアライズ（永続化・サーバー同期） | ◎ 値の差分そのものなので JSON 化容易 | △ コマンドの再構築が必要 |
-| フォーミュラ依存グラフ連携 | ◎ セル単位の値変更として統一的に扱える | △ フォーミュラ用コマンドを別立て |
-| 実装量 | ○ 小さく書ける | ✕ コマンドごとにクラス/関数が必要 |
+| 観点                                 | patch 形式（採用）                                                           | command パターン                         |
+| ------------------------------------ | ---------------------------------------------------------------------------- | ---------------------------------------- |
+| メモリ                               | ◎ 変更セルのみ保持。既存の `JSON.parse(JSON.stringify(rows))` 痛点を直接解消 | △ コマンドの引数とクロージャ次第で膨らむ |
+| 連続入力の統合                       | ◎ 同一セル patch を coalesce するだけ                                        | △ コマンドのマージ規則を個別設計         |
+| ペースト・フィルコピー               | ◎ 複数 patch を 1 エントリにまとめるだけ                                     | ○ BatchCommand を作る必要                |
+| シリアライズ（永続化・サーバー同期） | ◎ 値の差分そのものなので JSON 化容易                                         | △ コマンドの再構築が必要                 |
+| フォーミュラ依存グラフ連携           | ◎ セル単位の値変更として統一的に扱える                                       | △ フォーミュラ用コマンドを別立て         |
+| 実装量                               | ○ 小さく書ける                                                               | ✕ コマンドごとにクラス/関数が必要        |
 
 → スプレッドシートの編集は「セル値の変更」が支配的なので、patch 形式が素直かつ軽量。
 

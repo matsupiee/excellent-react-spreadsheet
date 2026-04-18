@@ -13,18 +13,18 @@ pnpm exec playwright install --with-deps chromium  # apps/storybook の E2E 用
 
 ## 2. 日常のコマンド
 
-| 目的 | コマンド |
-|---|---|
-| 全検証（コミット前に実行） | `pnpm verify` |
-| 単体テスト（watch） | `pnpm test:watch` |
-| 単一パッケージのテスト | `pnpm --filter excellent-react-spreadsheet test` |
-| 型チェックのみ | `pnpm typecheck` |
-| lint | `pnpm lint` |
-| lint 自動修正 | `pnpm lint:fix` |
-| format | `pnpm format` |
-| Storybook 起動 | `pnpm storybook` |
-| E2E（ローカル） | `pnpm --filter @excellent-react-spreadsheet/storybook test:e2e` |
-| バンドルサイズ確認 | `pnpm size` |
+| 目的                       | コマンド                                                        |
+| -------------------------- | --------------------------------------------------------------- |
+| 全検証（コミット前に実行） | `pnpm verify`                                                   |
+| 単体テスト（watch）        | `pnpm test:watch`                                               |
+| 単一パッケージのテスト     | `pnpm --filter excellent-react-spreadsheet test`                |
+| 型チェックのみ             | `pnpm typecheck`                                                |
+| lint                       | `pnpm lint`                                                     |
+| lint 自動修正              | `pnpm lint:fix`                                                 |
+| format                     | `pnpm format`                                                   |
+| Storybook 起動             | `pnpm storybook`                                                |
+| E2E（ローカル）            | `pnpm --filter @excellent-react-spreadsheet/storybook test:e2e` |
+| バンドルサイズ確認         | `pnpm size`                                                     |
 
 ## 3. タスクの粒度
 
@@ -60,6 +60,7 @@ Conventional Commits を採用：
 ```
 
 type:
+
 - `feat`: 新機能
 - `fix`: バグ修正
 - `refactor`: 振る舞い不変の構造変更
@@ -70,6 +71,7 @@ type:
 scope 例: `core`, `formula`, `tailwind`, `storybook`, `harness`
 
 例:
+
 - `feat(core): add intColumn preset`
 - `fix(formula): handle circular reference in SUM`
 - `docs(harness): document verify.sh behavior`
