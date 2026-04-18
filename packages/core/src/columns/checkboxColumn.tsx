@@ -58,9 +58,11 @@ function renderCheckboxCell<Row>({ value }: CellContext<Row, boolean | null>): R
 function CheckboxEditor<Row>({ ctx }: { ctx: EditorContext<Row, boolean | null> }): ReactNode {
   const ref = useRef<HTMLInputElement | null>(null);
   useEffect(() => {
+    ref.current?.focus();
+  }, []);
+  useEffect(() => {
     if (ref.current !== null) {
       ref.current.indeterminate = ctx.value === null;
-      ref.current.focus();
     }
   }, [ctx.value]);
   return (

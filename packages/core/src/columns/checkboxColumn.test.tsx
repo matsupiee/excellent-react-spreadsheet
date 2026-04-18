@@ -136,4 +136,61 @@ describe('checkboxColumn', () => {
     input.click();
     expect(onChange).toHaveBeenLastCalledWith(true);
   });
+
+  it('editor does not steal focus when ctx.value changes after mount', () => {
+    const column = checkboxColumn<Row, 'premium'>({ key: 'premium', title: 'Premium' });
+    const renderEditor = column.renderEditor;
+    if (renderEditor === undefined) throw new Error('renderEditor missing');
+
+    const onChange = vi.fn();
+    const onCommit = vi.fn();
+    const onCancel = vi.fn();
+    const makeCtx = (value: boolean | null): EditorContext<Row, boolean | null> => ({
+      value,
+      onChange,
+      onCommit,
+      onCancel,
+      row: makeRow({ premium: value }),
+      rowIndex: 0,
+      address,
+    });
+
+    // Render an external focusable element and a separate editor host.
+    const { rerender, container } = render(
+      <>
+        <button type="button" data-testid="external">
+          external
+        </button>
+        {renderEditor(makeCtx(null))}
+      </>,
+    );
+
+    const externalButton = container.querySelector<HTMLButtonElement>('[data-testid="external"]');
+    if (externalButton === null) throw new Error('external button missing');
+
+    // Move focus away from the editor to the external button.
+    externalButton.focus();
+    expect(document.activeElement).toBe(externalButton);
+
+    // Rerender with a different value; focus must not jump back to the editor.
+    rerender(
+      <>
+        <button type="button" data-testid="external">
+          external
+        </button>
+        {renderEditor(makeCtx(true))}
+      </>,
+    );
+    expect(document.activeElement).toBe(externalButton);
+
+    rerender(
+      <>
+        <button type="button" data-testid="external">
+          external
+        </button>
+        {renderEditor(makeCtx(false))}
+      </>,
+    );
+    expect(document.activeElement).toBe(externalButton);
+  });
 });
