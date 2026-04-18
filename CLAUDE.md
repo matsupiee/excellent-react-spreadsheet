@@ -100,7 +100,7 @@ excellent-react-spreadsheet/
 ## 5. 設計原則（絶対に破らない）
 
 1. **Headless First**: `useSpreadsheet()` フックだけで動き、`<Spreadsheet>` は薄い DOM を被せた層。
-2. **Controlled only**: `value` / `selection` / `columnWidths` はすべて controlled。uncontrolled モードは**提供しない**（state の二重化を避けるため）。
+2. **Controlled value, hybrid UI state**: `value` / `columnWidths` は controlled only（state の二重化と Undo / フォーミュラ整合のため）。`selection` / `activeCell` は hybrid: props 未指定なら内部 state にフォールバックする。詳細は `docs/decisions/0001-selection-hybrid-controlled.md` 参照。
 3. **TypeScript-First**: 列定義から行型を推論。`any` は使わない。`as` キャストは最小限。
 4. **Zero Config で動く**: `value` / `onChange` / `columns` / `getRowKey` の 4 つだけで基本動作する。
 5. **Escape Hatch 完備**: 詰まったら命令型 API（`ref.focus()` 等）や `useSpreadsheet` 直接利用に降りられる。
@@ -137,7 +137,7 @@ excellent-react-spreadsheet/
 
 ## 7. やってはいけないこと
 
-- ❌ uncontrolled モードの追加（`defaultValue` 的な props）
+- ❌ `value` の uncontrolled モード追加（`defaultValue` 的な props）
 - ❌ `any` / `// @ts-ignore` / `// @ts-expect-error` の使用（テストコードでも避ける）
 - ❌ フォーミュラに外部ライブラリ依存を足す
 - ❌ `pnpm verify` が赤いまま commit
