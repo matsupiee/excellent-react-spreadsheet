@@ -25,3 +25,6 @@ export type { TextColumnKey, TextColumnOptions } from './columns/textColumn.js';
 
 export { intColumn } from './columns/intColumn.js';
 export type { IntColumnOptions, IntegerKeysOf } from './columns/intColumn.js';
+
+export { floatColumn } from './columns/floatColumn.js';
+export type { FloatColumnOptions, FloatKeysOf } from './columns/floatColumn.js';
