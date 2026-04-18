@@ -152,8 +152,8 @@ excellent-react-spreadsheet/
 
 - [x] 要件定義 / API ドラフト作成（`requirements.md`, `api-draft.md`）
 - [x] Harness（本ドキュメント含む）の初期構築
-- [ ] **Turborepo スケルトン実装** ← 次
-- [ ] `packages/core` の `useSpreadsheet` プロトタイプ
+- [x] **Turborepo スケルトン実装** ← 次
+- [x] `packages/core` の `useSpreadsheet` プロトタイプ
 - [ ] 列プリセット（text → int → float → checkbox → date → select → custom）
 - [ ] Undo/Redo 実装
 - [ ] Copy/Paste

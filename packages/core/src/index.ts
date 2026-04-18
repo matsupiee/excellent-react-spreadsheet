@@ -19,3 +19,6 @@ export type {
 } from './types.js';
 
 export { useSpreadsheet } from './useSpreadsheet.js';
+
+export { textColumn } from './columns/textColumn.js';
+export type { TextColumnKey, TextColumnOptions } from './columns/textColumn.js';
