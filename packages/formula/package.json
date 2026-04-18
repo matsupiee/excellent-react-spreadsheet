@@ -1,0 +1,38 @@
+{
+  "name": "@excellent-react-spreadsheet/formula",
+  "version": "0.0.0",
+  "description": "Opt-in formula engine for excellent-react-spreadsheet (zero-dep).",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "size": "size-limit"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.0",
+    "vitest": "^2.1.0"
+  },
+  "size-limit": [
+    {
+      "name": "formula (ESM, gzipped)",
+      "path": "dist/index.js",
+      "limit": "15 KB"
+    }
+  ]
+}

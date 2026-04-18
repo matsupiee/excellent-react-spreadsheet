@@ -1,0 +1,37 @@
+{
+  "name": "@excellent-react-spreadsheet/storybook",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Visual catalog and benchmark stories for excellent-react-spreadsheet.",
+  "type": "module",
+  "scripts": {
+    "storybook": "storybook dev -p 6006",
+    "build": "storybook build -o storybook-static",
+    "dev": "storybook dev -p 6006",
+    "lint": "eslint \"stories/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\"",
+    "typecheck": "tsc --noEmit",
+    "test": "echo 'storybook has no vitest suite' && exit 0",
+    "test:e2e": "playwright test",
+    "bench": "echo 'bench runs via storybook build + playwright bench script'"
+  },
+  "dependencies": {
+    "excellent-react-spreadsheet": "workspace:*",
+    "@excellent-react-spreadsheet/formula": "workspace:*",
+    "@excellent-react-spreadsheet/tailwind": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@storybook/addon-essentials": "^8.4.0",
+    "@storybook/addon-interactions": "^8.4.0",
+    "@storybook/react": "^8.4.0",
+    "@storybook/react-vite": "^8.4.0",
+    "@storybook/test": "^8.4.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "storybook": "^8.4.0",
+    "vite": "^5.4.0"
+  }
+}
