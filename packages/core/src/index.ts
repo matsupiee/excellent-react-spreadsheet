@@ -44,3 +44,6 @@ export type { SelectColumnOptions, SelectOption } from './columns/selectColumn.j
 
 export { customColumn } from './columns/customColumn.js';
 export type { CustomColumnOptions } from './columns/customColumn.js';
+
+export { computeRowVirtualization, useRowVirtualizer } from './virtual.js';
+export type { RowVirtualizerOptions, RowVirtualizerResult } from './virtual.js';
