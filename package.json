@@ -1,0 +1,44 @@
+{
+  "name": "excellent-react-spreadsheet-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "React Excel-like spreadsheet library — monorepo root",
+  "license": "MIT",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint -- --fix",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:watch": "turbo run test -- --watch",
+    "test:e2e": "turbo run test:e2e",
+    "size": "turbo run size",
+    "bench": "turbo run bench",
+    "storybook": "turbo run storybook",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
+    "verify": "bash scripts/verify.sh",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.37.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "husky": "^9.1.0",
+    "lint-staged": "^15.3.0",
+    "prettier": "^3.4.0",
+    "size-limit": "^11.1.0",
+    "@size-limit/preset-small-lib": "^11.1.0",
+    "turbo": "^2.3.0",
+    "typescript": "^5.7.0"
+  }
+}

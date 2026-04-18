@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": ".",
+    "outDir": "dist",
+    "noEmit": true,
+    "types": ["vite/client"]
+  },
+  "include": ["stories/**/*", "src/**/*", ".storybook/**/*"],
+  "exclude": ["storybook-static", "node_modules"]
+}
