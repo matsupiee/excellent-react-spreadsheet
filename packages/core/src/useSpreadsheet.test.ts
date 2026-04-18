@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { ColumnDef, Selection, UseSpreadsheetProps } from './types.js';
+import type { CellPatch, ChangeEvent, ColumnDef, Selection, UseSpreadsheetProps } from './types.js';
 import { useSpreadsheet } from './useSpreadsheet.js';
 
 type Person = {
@@ -122,5 +122,91 @@ describe('useSpreadsheet', () => {
       { index: 0, key: 'name' },
       { index: 1, key: 'age' },
     ]);
+  });
+
+  describe('history', () => {
+    const setNamePatch = (rowIndex: number, prev: string, next: string): CellPatch => ({
+      op: 'set',
+      address: { row: rowIndex, col: 0 },
+      prev,
+      next,
+    });
+
+    it('applyPatches then undo/redo reaches the same rows state and toggles canUndo/canRedo', () => {
+      const initial = makePeople(3);
+      const onChange = vi.fn<(rows: Person[], change: ChangeEvent<Person>) => void>();
+      const { result, rerender } = renderHook(
+        (props: UseSpreadsheetProps<Person>) => useSpreadsheet(props),
+        {
+          initialProps: baseProps({ value: initial, onChange }),
+        },
+      );
+
+      expect(result.current.canUndo()).toBe(false);
+      expect(result.current.canRedo()).toBe(false);
+
+      act(() => {
+        result.current.applyPatches([setNamePatch(0, 'Person 0', 'Alice')]);
+      });
+
+      expect(onChange).toHaveBeenCalledTimes(1);
+      const [afterEditRows, afterEditChange] = onChange.mock.calls[0] ?? [];
+      expect(afterEditRows?.[0]?.name).toBe('Alice');
+      expect(afterEditChange?.reason).toBe('edit');
+
+      // Parent propagates the new value back into the hook via props.
+      rerender(baseProps({ value: afterEditRows ?? initial, onChange }));
+      expect(result.current.canUndo()).toBe(true);
+      expect(result.current.canRedo()).toBe(false);
+
+      act(() => {
+        const ok = result.current.undo();
+        expect(ok).toBe(true);
+      });
+
+      const [afterUndoRows, afterUndoChange] = onChange.mock.calls[1] ?? [];
+      expect(afterUndoRows?.[0]?.name).toBe('Person 0');
+      expect(afterUndoChange?.reason).toBe('undo');
+
+      rerender(baseProps({ value: afterUndoRows ?? initial, onChange }));
+      expect(result.current.canUndo()).toBe(false);
+      expect(result.current.canRedo()).toBe(true);
+
+      act(() => {
+        const ok = result.current.redo();
+        expect(ok).toBe(true);
+      });
+
+      const [afterRedoRows, afterRedoChange] = onChange.mock.calls[2] ?? [];
+      expect(afterRedoRows?.[0]?.name).toBe('Alice');
+      expect(afterRedoChange?.reason).toBe('redo');
+
+      rerender(baseProps({ value: afterRedoRows ?? initial, onChange }));
+      expect(result.current.canUndo()).toBe(true);
+      expect(result.current.canRedo()).toBe(false);
+    });
+
+    it('undo/redo return false and emit nothing when the stack is empty', () => {
+      const onChange = vi.fn<(rows: Person[], change: ChangeEvent<Person>) => void>();
+      const { result } = renderHook(() => useSpreadsheet(baseProps({ onChange })));
+
+      act(() => {
+        expect(result.current.undo()).toBe(false);
+        expect(result.current.redo()).toBe(false);
+      });
+      expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it('skipHistory applyPatches does not push a history entry', () => {
+      const onChange = vi.fn<(rows: Person[], change: ChangeEvent<Person>) => void>();
+      const { result } = renderHook(() => useSpreadsheet(baseProps({ onChange })));
+
+      act(() => {
+        result.current.applyPatches([setNamePatch(0, 'Person 0', 'X')], { skipHistory: true });
+      });
+
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(result.current.canUndo()).toBe(false);
+    });
   });
 });

@@ -1,6 +1,7 @@
 export const VERSION = '0.0.0';
 
 export type {
+  ApplyPatchesOptions,
   CellAddress,
   CellContext,
   CellPatch,
@@ -19,6 +20,9 @@ export type {
 } from './types.js';
 
 export { useSpreadsheet } from './useSpreadsheet.js';
+
+export { createHistory } from './history.js';
+export type { HistoryEntry } from './history.js';
 
 export { textColumn } from './columns/textColumn.js';
 export type { TextColumnKey, TextColumnOptions } from './columns/textColumn.js';
