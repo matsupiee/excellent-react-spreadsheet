@@ -31,3 +31,6 @@ export type { FloatColumnOptions, FloatKeysOf } from './columns/floatColumn.js';
 
 export { checkboxColumn } from './columns/checkboxColumn.js';
 export type { BooleanKeysOf, CheckboxColumnOptions } from './columns/checkboxColumn.js';
+
+export { dateColumn } from './columns/dateColumn.js';
+export type { DateColumnOptions, DateKeysOf } from './columns/dateColumn.js';
