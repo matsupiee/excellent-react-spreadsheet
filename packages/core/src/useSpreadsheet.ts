@@ -1,11 +1,13 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 
+import { buildPastePatches, parseClipboard, serializeRange } from './clipboard.js';
 import { createHistory, type History } from './history.js';
 import type {
   ApplyPatchesOptions,
   CellAddress,
   CellPatch,
   ChangeReason,
+  ClipboardPayload,
   ColumnDef,
   ColumnMeta,
   RowMeta,
@@ -108,6 +110,8 @@ export const useSpreadsheet = <Row>(props: UseSpreadsheetProps<Row>): UseSpreads
   columnsRef.current = columns;
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  const selectionRef = useRef<Selection | null>(selection);
+  selectionRef.current = selection;
 
   const historyRef = useRef<History | null>(null);
   if (historyRef.current === null) {
@@ -202,6 +206,63 @@ export const useSpreadsheet = <Row>(props: UseSpreadsheetProps<Row>): UseSpreads
   const commitEdit = useCallback((): void => {}, []);
   const cancelEdit = useCallback((): void => {}, []);
 
+  const copy = useCallback((): ClipboardPayload | null => {
+    const current = selectionRef.current;
+    if (current === null) return null;
+    return serializeRange({
+      rows: valueRef.current,
+      columns: columnsRef.current,
+      range: current,
+    });
+  }, []);
+
+  const paste = useCallback(
+    (text: string): void => {
+      const current = selectionRef.current;
+      if (current === null) return;
+      const matrix = parseClipboard(text);
+      if (matrix.length === 0) return;
+      const patches = buildPastePatches({
+        rows: valueRef.current,
+        columns: columnsRef.current,
+        range: current,
+        matrix,
+      });
+      if (patches.length === 0) return;
+      applyPatches(patches, { reason: 'paste', label: `paste ${patches.length} cells` });
+    },
+    [applyPatches],
+  );
+
+  const cut = useCallback((): ClipboardPayload | null => {
+    const current = selectionRef.current;
+    if (current === null) return null;
+    const rows = valueRef.current;
+    const columns = columnsRef.current;
+    const payload = serializeRange({ rows, columns, range: current });
+
+    // Why: cut clears selected cells by deserializing empty strings through
+    // each column. Columns without a deserialize whose Value is not string
+    // are skipped — matches the paste contract to avoid silent coercion.
+    const emptyMatrix: string[][] = [];
+    const startRow = Math.min(current.start.row, current.end.row);
+    const endRow = Math.max(current.start.row, current.end.row);
+    const startCol = Math.min(current.start.col, current.end.col);
+    const endCol = Math.max(current.start.col, current.end.col);
+    for (let r = startRow; r <= endRow; r += 1) {
+      const row: string[] = [];
+      for (let c = startCol; c <= endCol; c += 1) {
+        row.push('');
+      }
+      emptyMatrix.push(row);
+    }
+    const patches = buildPastePatches({ rows, columns, range: current, matrix: emptyMatrix });
+    if (patches.length > 0) {
+      applyPatches(patches, { reason: 'delete', label: `cut ${patches.length} cells` });
+    }
+    return payload;
+  }, [applyPatches]);
+
   return {
     rows: value,
     columns,
@@ -220,5 +281,8 @@ export const useSpreadsheet = <Row>(props: UseSpreadsheetProps<Row>): UseSpreads
     canUndo,
     canRedo,
     clearHistory,
+    copy,
+    paste,
+    cut,
   };
 };

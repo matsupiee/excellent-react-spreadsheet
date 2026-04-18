@@ -89,6 +89,11 @@ export type UseSpreadsheetProps<Row> = {
   maxHistory?: number;
 };
 
+export type ClipboardPayload = {
+  text: string;
+  html: string;
+};
+
 export type UseSpreadsheetReturn<Row> = {
   rows: Row[];
   columns: ColumnDef<Row>[];
@@ -107,6 +112,9 @@ export type UseSpreadsheetReturn<Row> = {
   canUndo: () => boolean;
   canRedo: () => boolean;
   clearHistory: () => void;
+  copy: () => ClipboardPayload | null;
+  paste: (text: string) => void;
+  cut: () => ClipboardPayload | null;
 };
 
 export type SpreadsheetRef = {

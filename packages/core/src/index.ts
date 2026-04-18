@@ -8,6 +8,7 @@ export type {
   CellRange,
   ChangeEvent,
   ChangeReason,
+  ClipboardPayload,
   ColumnDef,
   ColumnMeta,
   ColumnWidth,
@@ -18,6 +19,9 @@ export type {
   UseSpreadsheetProps,
   UseSpreadsheetReturn,
 } from './types.js';
+
+export { buildPastePatches, parseClipboard, serializeRange } from './clipboard.js';
+export type { SerializedRange } from './clipboard.js';
 
 export { useSpreadsheet } from './useSpreadsheet.js';
 

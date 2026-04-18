@@ -209,4 +209,68 @@ describe('useSpreadsheet', () => {
       expect(result.current.canUndo()).toBe(false);
     });
   });
+
+  describe('clipboard', () => {
+    it('copy() returns TSV + HTML for the current selection, null when no selection', () => {
+      const { result } = renderHook(() => useSpreadsheet(baseProps()));
+      expect(result.current.copy()).toBeNull();
+
+      act(() => {
+        result.current.setSelection({ start: { row: 0, col: 0 }, end: { row: 1, col: 0 } });
+      });
+
+      const payload = result.current.copy();
+      expect(payload).not.toBeNull();
+      expect(payload?.text).toBe('Person 0\nPerson 1');
+      expect(payload?.html).toContain('<table>');
+    });
+
+    it('paste() parses TSV and dispatches a "paste" change via applyPatches', () => {
+      const onChange = vi.fn<(rows: Person[], change: ChangeEvent<Person>) => void>();
+      const { result } = renderHook(() => useSpreadsheet(baseProps({ onChange })));
+
+      act(() => {
+        result.current.setSelection({ start: { row: 0, col: 0 }, end: { row: 0, col: 0 } });
+      });
+      act(() => {
+        // Columns here have no deserialize; name is string (accepted), age is number (skipped).
+        result.current.paste('Alice\t42');
+      });
+
+      expect(onChange).toHaveBeenCalledTimes(1);
+      const [nextRows, change] = onChange.mock.calls[0] ?? [];
+      expect(change?.reason).toBe('paste');
+      expect(nextRows?.[0]?.name).toBe('Alice');
+      // age column has no deserialize and Value is number → skipped, not coerced.
+      expect(nextRows?.[0]?.age).toBe(20);
+    });
+
+    it('cut() returns the payload and clears writable string cells via "delete" change', () => {
+      const onChange = vi.fn<(rows: Person[], change: ChangeEvent<Person>) => void>();
+      const { result } = renderHook(() => useSpreadsheet(baseProps({ onChange })));
+
+      act(() => {
+        result.current.setSelection({ start: { row: 0, col: 0 }, end: { row: 0, col: 0 } });
+      });
+      const captured: { payload: { text: string; html: string } | null } = { payload: null };
+      act(() => {
+        captured.payload = result.current.cut();
+      });
+
+      expect(captured.payload?.text).toBe('Person 0');
+      expect(onChange).toHaveBeenCalledTimes(1);
+      const [nextRows, change] = onChange.mock.calls[0] ?? [];
+      expect(change?.reason).toBe('delete');
+      expect(nextRows?.[0]?.name).toBe('');
+    });
+
+    it('paste() is a no-op when selection is null', () => {
+      const onChange = vi.fn<(rows: Person[], change: ChangeEvent<Person>) => void>();
+      const { result } = renderHook(() => useSpreadsheet(baseProps({ onChange })));
+      act(() => {
+        result.current.paste('anything');
+      });
+      expect(onChange).not.toHaveBeenCalled();
+    });
+  });
 });
