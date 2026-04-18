@@ -70,6 +70,13 @@ export type ColumnMeta = {
   key: string;
 };
 
+export type ApplyPatchesOptions = {
+  reason?: ChangeReason;
+  label?: string;
+  coalesceKey?: string;
+  skipHistory?: boolean;
+};
+
 export type UseSpreadsheetProps<Row> = {
   value: Row[];
   onChange: (rows: Row[], change: ChangeEvent<Row>) => void;
@@ -79,6 +86,7 @@ export type UseSpreadsheetProps<Row> = {
   onSelectionChange?: (selection: Selection | null) => void;
   activeCell?: CellAddress | null;
   onActiveCellChange?: (address: CellAddress | null) => void;
+  maxHistory?: number;
 };
 
 export type UseSpreadsheetReturn<Row> = {
@@ -93,6 +101,12 @@ export type UseSpreadsheetReturn<Row> = {
   startEdit: (address?: CellAddress) => void;
   commitEdit: () => void;
   cancelEdit: () => void;
+  applyPatches: (patches: CellPatch[], opts?: ApplyPatchesOptions) => void;
+  undo: () => boolean;
+  redo: () => boolean;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
+  clearHistory: () => void;
 };
 
 export type SpreadsheetRef = {
