@@ -18,7 +18,6 @@ export type IntColumnOptions<Row, K extends IntegerKeysOf<Row>> = {
   width?: ColumnWidth;
   min?: number;
   max?: number;
-  step?: number;
 };
 
 const rightAlign = { textAlign: 'right' as const, fontVariantNumeric: 'tabular-nums' as const };
