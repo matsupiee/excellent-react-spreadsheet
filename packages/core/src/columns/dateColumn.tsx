@@ -15,7 +15,6 @@ export type DateColumnOptions<Row, K extends DateKeysOf<Row>> = {
   key: K;
   title: ReactNode;
   width?: ColumnWidth;
-  format?: 'yyyy-MM-dd';
   min?: Date;
   max?: Date;
 };
