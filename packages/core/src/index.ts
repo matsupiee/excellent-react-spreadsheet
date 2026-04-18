@@ -22,3 +22,6 @@ export { useSpreadsheet } from './useSpreadsheet.js';
 
 export { textColumn } from './columns/textColumn.js';
 export type { TextColumnKey, TextColumnOptions } from './columns/textColumn.js';
+
+export { intColumn } from './columns/intColumn.js';
+export type { IntColumnOptions, IntegerKeysOf } from './columns/intColumn.js';
