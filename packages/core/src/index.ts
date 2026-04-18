@@ -28,3 +28,6 @@ export type { IntColumnOptions, IntegerKeysOf } from './columns/intColumn.js';
 
 export { floatColumn } from './columns/floatColumn.js';
 export type { FloatColumnOptions, FloatKeysOf } from './columns/floatColumn.js';
+
+export { checkboxColumn } from './columns/checkboxColumn.js';
+export type { BooleanKeysOf, CheckboxColumnOptions } from './columns/checkboxColumn.js';
