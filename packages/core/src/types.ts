@@ -34,10 +34,18 @@ export type CellContext<Row, Value> = {
   address: CellAddress;
 };
 
+export type CommitMove = 'down' | 'up' | 'right' | 'left' | 'none';
+
 export type EditorContext<Row, Value> = {
   value: Value;
   onChange: (next: Value) => void;
-  onCommit: () => void;
+  /**
+   * Commit the current draft. Optionally signals the host to move the active
+   * cell after applying the patch — Google-Sheets-style: Enter→down,
+   * Shift+Enter→up, Tab→right, Shift+Tab→left. `'none'` (or omitted) keeps
+   * the active cell where it is, used for blur-driven commits.
+   */
+  onCommit: (move?: CommitMove) => void;
   onCancel: () => void;
   row: Row;
   rowIndex: number;

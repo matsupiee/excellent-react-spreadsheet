@@ -44,12 +44,15 @@ function renderTextEditor<Row>(
         ctx.onChange(applyMaxLength(event.target.value, maxLength));
       }}
       onBlur={() => {
-        ctx.onCommit();
+        ctx.onCommit('none');
       }}
       onKeyDown={(event) => {
         if (event.key === 'Enter') {
           event.preventDefault();
-          ctx.onCommit();
+          ctx.onCommit(event.shiftKey ? 'up' : 'down');
+        } else if (event.key === 'Tab') {
+          event.preventDefault();
+          ctx.onCommit(event.shiftKey ? 'left' : 'right');
         } else if (event.key === 'Escape') {
           event.preventDefault();
           ctx.onCancel();

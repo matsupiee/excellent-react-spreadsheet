@@ -75,12 +75,15 @@ function CheckboxEditor<Row>({ ctx }: { ctx: EditorContext<Row, boolean | null> 
           ctx.onChange(event.target.checked);
         }}
         onBlur={() => {
-          ctx.onCommit();
+          ctx.onCommit('none');
         }}
         onKeyDown={(event) => {
           if (event.key === 'Enter') {
             event.preventDefault();
-            ctx.onCommit();
+            ctx.onCommit(event.shiftKey ? 'up' : 'down');
+          } else if (event.key === 'Tab') {
+            event.preventDefault();
+            ctx.onCommit(event.shiftKey ? 'left' : 'right');
           } else if (event.key === 'Escape') {
             event.preventDefault();
             ctx.onCancel();

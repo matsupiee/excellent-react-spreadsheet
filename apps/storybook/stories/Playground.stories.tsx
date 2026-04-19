@@ -56,7 +56,7 @@ const initialRows: Row[] = [
     inStock: true,
     dueDate: new Date(Date.UTC(2026, 3, 24)),
     status: 'review',
-    note: 'ダブルクリックまたは Enter で編集',
+    note: 'Enter または F2 で編集、文字キーで上書き',
   },
   {
     id: 'r2',
@@ -115,8 +115,10 @@ function PlaygroundDemo(): ReactElement {
     <div style={{ padding: 24, fontFamily: 'system-ui, sans-serif' }}>
       <h2 style={{ marginTop: 0 }}>Interactive Spreadsheet</h2>
       <p style={{ color: '#52525b', marginTop: 4 }}>
-        クリックで選択、ダブルクリック/Enter で編集、Cmd+Z で Undo、Cmd+C/V でコピペ、Delete
-        で消去。
+        スプレッドシート風キーバインド: Enter コミット→下、Tab コミット→右 (+Shift で逆方向)、 F2
+        で既存値を保ったまま編集、文字キーで上書き、Cmd+A 全選択、Home/End で行端、 Cmd+Home/End
+        でシート端、Cmd+矢印で端まで一気に、PageUp/PageDown でページ送り、
+        行番号/列ヘッダ/左上角クリックで行・列・全選択。Cmd+Z Undo、Cmd+C/V コピペ、Delete 消去。
       </p>
       <Spreadsheet<Row>
         value={rows}

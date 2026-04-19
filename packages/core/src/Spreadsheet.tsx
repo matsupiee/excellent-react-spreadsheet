@@ -22,6 +22,7 @@ import type {
   CellPatch,
   ColumnDef,
   ColumnWidth,
+  CommitMove,
   Selection,
   SpreadsheetRef,
   UseSpreadsheetProps,
@@ -72,6 +73,8 @@ const inRange = (addr: CellAddress, range: Selection | null): boolean => {
 
 const addrEqual = (a: CellAddress, b: CellAddress): boolean => a.row === b.row && a.col === b.col;
 
+const ROW_GUTTER_WIDTH = 48;
+
 const headerStyle: CSSProperties = {
   border: '1px solid #d4d4d8',
   padding: '6px 10px',
@@ -81,6 +84,59 @@ const headerStyle: CSSProperties = {
   position: 'sticky',
   top: 0,
   zIndex: 1,
+};
+
+const headerActiveStyle: CSSProperties = {
+  ...headerStyle,
+  background: '#e8eaed',
+  color: '#1a73e8',
+};
+
+const cornerHeaderStyle: CSSProperties = {
+  ...headerStyle,
+  left: 0,
+  zIndex: 3,
+  width: ROW_GUTTER_WIDTH,
+  minWidth: ROW_GUTTER_WIDTH,
+  padding: 0,
+};
+
+const baseGutterStyle: CSSProperties = {
+  border: '1px solid #d4d4d8',
+  padding: '4px 6px',
+  textAlign: 'center',
+  fontWeight: 500,
+  fontVariantNumeric: 'tabular-nums',
+  color: '#52525b',
+  background: '#f4f4f5',
+  position: 'sticky',
+  left: 0,
+  zIndex: 1,
+  width: ROW_GUTTER_WIDTH,
+  minWidth: ROW_GUTTER_WIDTH,
+  cursor: 'default',
+  userSelect: 'none',
+};
+
+const gutterActiveStyle: CSSProperties = {
+  ...baseGutterStyle,
+  background: '#e8eaed',
+  color: '#1a73e8',
+  fontWeight: 700,
+};
+
+const colInRange = (col: number, range: Selection | null): boolean => {
+  if (range === null) return false;
+  const c0 = Math.min(range.start.col, range.end.col);
+  const c1 = Math.max(range.start.col, range.end.col);
+  return col >= c0 && col <= c1;
+};
+
+const rowInRange = (row: number, range: Selection | null): boolean => {
+  if (range === null) return false;
+  const r0 = Math.min(range.start.row, range.end.row);
+  const r1 = Math.max(range.start.row, range.end.row);
+  return row >= r0 && row <= r1;
 };
 
 const baseRootStyle: CSSProperties = {
@@ -146,32 +202,66 @@ function SpreadsheetImpl<Row>(
     [undo, redo, setSelection],
   );
 
-  const startEdit = useCallback((addr: CellAddress): void => {
+  /**
+   * Enter edit mode at `addr`. By default the editor opens with the cell's
+   * current value (Enter / F2 behaviour). Pass `initialDraft` to override —
+   * used for Google-Sheets-style type-to-overwrite, where the first printable
+   * keypress replaces the cell value rather than appending to it.
+   */
+  const startEdit = useCallback((addr: CellAddress, initialDraft?: unknown): void => {
     const col = columnsRef.current[addr.col];
     const row = rowsRef.current[addr.row];
     if (col === undefined || row === undefined) return;
     if (col.renderEditor === undefined) return;
-    setEditing({ address: addr, draft: col.getValue(row) });
+    const draft = initialDraft === undefined ? col.getValue(row) : initialDraft;
+    setEditing({ address: addr, draft });
   }, []);
 
-  const commitEdit = useCallback((): void => {
-    const current = editingRef.current;
-    if (current === null) return;
-    const col = columnsRef.current[current.address.col];
-    const row = rowsRef.current[current.address.row];
-    setEditing(null);
-    if (col === undefined || row === undefined) return;
-    const prev = col.getValue(row);
-    if (Object.is(prev, current.draft)) return;
-    applyPatches([{ op: 'set', address: current.address, prev, next: current.draft }], {
-      reason: 'edit',
-      label: 'edit cell',
-      coalesceKey: `edit:${String(current.address.row)}:${String(current.address.col)}`,
-    });
-  }, [applyPatches]);
+  const commitEdit = useCallback(
+    (move: CommitMove = 'none'): void => {
+      const current = editingRef.current;
+      if (current === null) return;
+      const col = columnsRef.current[current.address.col];
+      const row = rowsRef.current[current.address.row];
+      // Clear the ref synchronously so the editor's unmount-driven blur
+      // (which fires *after* setEditing(null) but *before* the next render
+      // refreshes the ref) can't re-enter and double-commit the same draft.
+      editingRef.current = null;
+      setEditing(null);
+      if (col !== undefined && row !== undefined) {
+        const prev = col.getValue(row);
+        if (!Object.is(prev, current.draft)) {
+          applyPatches([{ op: 'set', address: current.address, prev, next: current.draft }], {
+            reason: 'edit',
+            label: 'edit cell',
+            coalesceKey: `edit:${String(current.address.row)}:${String(current.address.col)}`,
+          });
+        }
+      }
+      if (move === 'none') {
+        rootRef.current?.focus();
+        return;
+      }
+      const rowCount = rowsRef.current.length;
+      const colCount = columnsRef.current.length;
+      const dr = move === 'down' ? 1 : move === 'up' ? -1 : 0;
+      const dc = move === 'right' ? 1 : move === 'left' ? -1 : 0;
+      const nextRow = Math.min(Math.max(current.address.row + dr, 0), rowCount - 1);
+      const nextCol = Math.min(Math.max(current.address.col + dc, 0), colCount - 1);
+      const target: CellAddress = { row: nextRow, col: nextCol };
+      setSelection({ start: target, end: target });
+      setActiveCell(target);
+      rootRef.current?.focus();
+    },
+    [applyPatches, setSelection, setActiveCell],
+  );
 
   const cancelEdit = useCallback((): void => {
+    // See commitEdit: clear the ref synchronously so the unmount-driven blur
+    // can't fall through to onCommit and accidentally save the discarded draft.
+    editingRef.current = null;
     setEditing(null);
+    rootRef.current?.focus();
   }, []);
 
   const moveActive = useCallback(
@@ -222,9 +312,40 @@ function SpreadsheetImpl<Row>(
     }
   }, [activeCell, applyPatches]);
 
+  const rowH = rowHeight ?? 28;
+
+  /**
+   * Move active cell to an absolute address. Used by Home/End/PageUp/PageDown
+   * and Ctrl+Home/Ctrl+End — anything where the destination isn't a simple
+   * delta from the current position.
+   */
+  const moveActiveTo = useCallback(
+    (target: CellAddress, extend: boolean): void => {
+      const rowCount = rowsRef.current.length;
+      const colCount = columnsRef.current.length;
+      if (rowCount === 0 || colCount === 0) return;
+      const clamped: CellAddress = {
+        row: Math.min(Math.max(target.row, 0), rowCount - 1),
+        col: Math.min(Math.max(target.col, 0), colCount - 1),
+      };
+      if (extend && selectionRef.current !== null) {
+        setSelection({ start: selectionRef.current.start, end: clamped });
+      } else {
+        setSelection({ start: clamped, end: clamped });
+      }
+      setActiveCell(clamped);
+    },
+    [setSelection, setActiveCell],
+  );
+
   const handleKeyDown = useCallback(
     (e: ReactKeyboardEvent<HTMLDivElement>): void => {
       if (editingRef.current !== null) return;
+      // Ignore keys that bubbled up from a descendant (e.g. an editor input
+      // that already handled and committed Enter/Tab). Without this guard the
+      // bubbled Enter would re-trigger startEdit at the freshly-moved active
+      // cell, putting the spreadsheet right back into edit mode.
+      if (e.target !== e.currentTarget) return;
       const mod = e.metaKey || e.ctrlKey;
 
       if (mod && (e.key === 'z' || e.key === 'Z')) {
@@ -238,48 +359,117 @@ function SpreadsheetImpl<Row>(
         redo();
         return;
       }
+      if (mod && (e.key === 'a' || e.key === 'A')) {
+        e.preventDefault();
+        const lastRow = rowsRef.current.length - 1;
+        const lastCol = columnsRef.current.length - 1;
+        if (lastRow >= 0 && lastCol >= 0) {
+          setSelection({ start: { row: 0, col: 0 }, end: { row: lastRow, col: lastCol } });
+          setActiveCell({ row: 0, col: 0 });
+        }
+        return;
+      }
 
       const active = activeCell;
       if (active === null) return;
 
+      const lastRow = rowsRef.current.length - 1;
+      const lastCol = columnsRef.current.length - 1;
+
       switch (e.key) {
         case 'ArrowUp':
           e.preventDefault();
-          moveActive(-1, 0, e.shiftKey);
+          if (mod) moveActiveTo({ row: 0, col: active.col }, e.shiftKey);
+          else moveActive(-1, 0, e.shiftKey);
           return;
         case 'ArrowDown':
           e.preventDefault();
-          moveActive(1, 0, e.shiftKey);
+          if (mod) moveActiveTo({ row: lastRow, col: active.col }, e.shiftKey);
+          else moveActive(1, 0, e.shiftKey);
           return;
         case 'ArrowLeft':
           e.preventDefault();
-          moveActive(0, -1, e.shiftKey);
+          if (mod) moveActiveTo({ row: active.row, col: 0 }, e.shiftKey);
+          else moveActive(0, -1, e.shiftKey);
           return;
         case 'ArrowRight':
           e.preventDefault();
-          moveActive(0, 1, e.shiftKey);
+          if (mod) moveActiveTo({ row: active.row, col: lastCol }, e.shiftKey);
+          else moveActive(0, 1, e.shiftKey);
           return;
         case 'Tab':
           e.preventDefault();
           moveActive(0, e.shiftKey ? -1 : 1, false);
           return;
         case 'Enter':
+          e.preventDefault();
+          startEdit(active);
+          return;
         case 'F2':
           e.preventDefault();
           startEdit(active);
           return;
+        case 'Home':
+          e.preventDefault();
+          if (mod) moveActiveTo({ row: 0, col: 0 }, e.shiftKey);
+          else moveActiveTo({ row: active.row, col: 0 }, e.shiftKey);
+          return;
+        case 'End':
+          e.preventDefault();
+          if (mod) moveActiveTo({ row: lastRow, col: lastCol }, e.shiftKey);
+          else moveActiveTo({ row: active.row, col: lastCol }, e.shiftKey);
+          return;
+        case 'PageUp': {
+          e.preventDefault();
+          const pageRows = Math.max(
+            1,
+            Math.floor((rootRef.current?.clientHeight ?? rowH * 10) / rowH) - 1,
+          );
+          moveActive(-pageRows, 0, e.shiftKey);
+          return;
+        }
+        case 'PageDown': {
+          e.preventDefault();
+          const pageRows = Math.max(
+            1,
+            Math.floor((rootRef.current?.clientHeight ?? rowH * 10) / rowH) - 1,
+          );
+          moveActive(pageRows, 0, e.shiftKey);
+          return;
+        }
         case 'Delete':
         case 'Backspace':
           e.preventDefault();
           clearSelection();
           return;
         default:
+          // Type-to-overwrite: a printable character (no modifier) replaces
+          // the cell value rather than appending to it. We seed the editor's
+          // draft with `deserialize(char)` when the column supports it; if
+          // deserialize is missing, fall back to the existing value (Enter/F2
+          // semantics) so we don't silently drop the keypress.
           if (!mod && e.key.length === 1) {
-            startEdit(active);
+            const col = columnsRef.current[active.col];
+            if (col?.deserialize !== undefined) {
+              startEdit(active, col.deserialize(e.key));
+            } else {
+              startEdit(active);
+            }
           }
       }
     },
-    [activeCell, redo, undo, moveActive, startEdit, clearSelection],
+    [
+      activeCell,
+      redo,
+      undo,
+      moveActive,
+      moveActiveTo,
+      startEdit,
+      clearSelection,
+      setSelection,
+      setActiveCell,
+      rowH,
+    ],
   );
 
   const handleCopy = useCallback(
@@ -346,6 +536,55 @@ function SpreadsheetImpl<Row>(
     [setSelection],
   );
 
+  /** Row-gutter click → select the entire row (Sheets behaviour). */
+  const handleRowHeaderMouseDown = useCallback(
+    (rowIndex: number, e: ReactMouseEvent<HTMLTableCellElement>): void => {
+      if (editingRef.current !== null) commitEdit();
+      rootRef.current?.focus();
+      const lastCol = columnsRef.current.length - 1;
+      if (lastCol < 0) return;
+      const start: CellAddress = { row: rowIndex, col: 0 };
+      const end: CellAddress = { row: rowIndex, col: lastCol };
+      if (e.shiftKey && selectionRef.current !== null) {
+        setSelection({ start: selectionRef.current.start, end });
+      } else {
+        setSelection({ start, end });
+      }
+      setActiveCell(start);
+    },
+    [commitEdit, setSelection, setActiveCell],
+  );
+
+  /** Column-header click → select the entire column (Sheets behaviour). */
+  const handleColHeaderMouseDown = useCallback(
+    (colIndex: number, e: ReactMouseEvent<HTMLTableCellElement>): void => {
+      if (editingRef.current !== null) commitEdit();
+      rootRef.current?.focus();
+      const lastRow = rowsRef.current.length - 1;
+      if (lastRow < 0) return;
+      const start: CellAddress = { row: 0, col: colIndex };
+      const end: CellAddress = { row: lastRow, col: colIndex };
+      if (e.shiftKey && selectionRef.current !== null) {
+        setSelection({ start: selectionRef.current.start, end });
+      } else {
+        setSelection({ start, end });
+      }
+      setActiveCell(start);
+    },
+    [commitEdit, setSelection, setActiveCell],
+  );
+
+  /** Corner click → select the entire sheet. */
+  const handleCornerMouseDown = useCallback((): void => {
+    if (editingRef.current !== null) commitEdit();
+    rootRef.current?.focus();
+    const lastRow = rowsRef.current.length - 1;
+    const lastCol = columnsRef.current.length - 1;
+    if (lastRow < 0 || lastCol < 0) return;
+    setSelection({ start: { row: 0, col: 0 }, end: { row: lastRow, col: lastCol } });
+    setActiveCell({ row: 0, col: 0 });
+  }, [commitEdit, setSelection, setActiveCell]);
+
   useEffect(() => {
     const up = (): void => {
       draggingRef.current = false;
@@ -356,7 +595,6 @@ function SpreadsheetImpl<Row>(
     };
   }, []);
 
-  const rowH = rowHeight ?? 28;
   const colWidths = useMemo(() => columns.map((c) => resolveWidthPx(c.width)), [columns]);
 
   const rootStyle: CSSProperties = {
@@ -463,40 +701,80 @@ function SpreadsheetImpl<Row>(
     >
       <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed' }}>
         <colgroup>
+          <col data-gutter="row-number" style={{ width: `${String(ROW_GUTTER_WIDTH)}px` }} />
           {columns.map((col, i) => (
             <col key={col.key} style={{ width: `${String(colWidths[i] ?? 120)}px` }} />
           ))}
         </colgroup>
         <thead>
           <tr>
-            {columns.map((col) => (
-              <th key={col.key} style={headerStyle}>
-                {col.title}
-              </th>
-            ))}
+            <th
+              style={{ ...cornerHeaderStyle, cursor: 'cell' }}
+              aria-label="Select all"
+              onMouseDown={handleCornerMouseDown}
+            />
+            {columns.map((col, i) => {
+              const isColActive = activeCell !== null && activeCell.col === i;
+              const isColInSel = colInRange(i, selection);
+              const baseStyle = isColActive || isColInSel ? headerActiveStyle : headerStyle;
+              return (
+                <th
+                  key={col.key}
+                  style={{ ...baseStyle, cursor: 'cell' }}
+                  onMouseDown={(ev) => {
+                    handleColHeaderMouseDown(i, ev);
+                  }}
+                >
+                  {col.title}
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
           {virt.paddingTop > 0 ? (
             <tr aria-hidden="true" style={spacerStyle(virt.paddingTop)} data-spacer="top">
-              <td colSpan={columns.length} style={spacerStyle(virt.paddingTop)} />
+              <td colSpan={columns.length + 1} style={spacerStyle(virt.paddingTop)} />
             </tr>
           ) : null}
           {visibleMeta.map((meta) => {
             const r = meta.index;
             const row = rows[r];
             if (row === undefined) return null;
+            const isRowActive = activeCell !== null && activeCell.row === r;
+            const isRowInSel = rowInRange(r, selection);
+            const rowGutterHighlight = isRowActive || isRowInSel;
             return (
               <tr key={meta.key} style={{ height: rowH }} data-row-index={r}>
+                <th
+                  scope="row"
+                  data-gutter="row-number"
+                  style={{
+                    ...(rowGutterHighlight ? gutterActiveStyle : baseGutterStyle),
+                    cursor: 'cell',
+                  }}
+                  onMouseDown={(ev) => {
+                    handleRowHeaderMouseDown(r, ev);
+                  }}
+                >
+                  {r + 1}
+                </th>
                 {columns.map((col, c) => {
                   const addr: CellAddress = { row: r, col: c };
                   const isActive = activeCell !== null && addrEqual(activeCell, addr);
                   const isInSel = inRange(addr, selection);
                   const isEditingHere = editing !== null && addrEqual(editing.address, addr);
+                  // Use box-shadow inset for the active-cell ring so the cell's
+                  // intrinsic border width never changes — that previously
+                  // shifted column widths by 1px when active moved between
+                  // cells. The anchor cell itself stays white (Sheets-style)
+                  // so the user can read its value clearly within a range.
                   const cellStyle: CSSProperties = {
-                    border: isActive ? '2px solid #2563eb' : '1px solid #e4e4e7',
+                    border: '1px solid #e4e4e7',
                     padding: isEditingHere ? 0 : '4px 8px',
-                    background: isActive ? '#dbeafe' : isInSel ? '#eff6ff' : '#fff',
+                    background: isInSel && !isActive ? '#e8f0fe' : '#fff',
+                    boxShadow: isActive ? 'inset 0 0 0 2px #1a73e8' : undefined,
+                    position: 'relative',
                     overflow: 'hidden',
                     whiteSpace: 'nowrap',
                     textOverflow: 'ellipsis',
@@ -549,7 +827,7 @@ function SpreadsheetImpl<Row>(
           })}
           {virt.paddingBottom > 0 ? (
             <tr aria-hidden="true" style={spacerStyle(virt.paddingBottom)} data-spacer="bottom">
-              <td colSpan={columns.length} style={spacerStyle(virt.paddingBottom)} />
+              <td colSpan={columns.length + 1} style={spacerStyle(virt.paddingBottom)} />
             </tr>
           ) : null}
         </tbody>
