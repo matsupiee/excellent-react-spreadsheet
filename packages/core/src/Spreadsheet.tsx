@@ -785,7 +785,13 @@ function SpreadsheetImpl<Row>(
                     content = col.renderEditor({
                       value: editing.draft,
                       onChange: (next: unknown) => {
-                        setEditing({ address: addr, draft: next });
+                        // Sync the ref before scheduling the state update so
+                        // a commit fired in the same tick (e.g. selectColumn
+                        // committing immediately after onChange) reads the
+                        // fresh draft instead of the pre-change value.
+                        const nextState: EditingState = { address: addr, draft: next };
+                        editingRef.current = nextState;
+                        setEditing(nextState);
                       },
                       onCommit: commitEdit,
                       onCancel: cancelEdit,
