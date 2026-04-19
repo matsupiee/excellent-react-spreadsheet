@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": ".",
+    "outDir": "dist",
+    "noEmit": true,
+    "types": ["vite/client"]
+  },
+  "include": ["demos/**/*", ".vitepress/**/*.ts", ".vitepress/env.d.ts"],
+  "exclude": [".vitepress/dist", ".vitepress/cache", "node_modules"]
+}
