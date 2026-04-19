@@ -1,0 +1,22 @@
+# Cloudflare Pages cache rules.
+# Syntax: https://developers.cloudflare.com/pages/configuration/headers/
+
+# Immutable, content-hashed assets — cache forever.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Static images/icons — 1 day.
+/*.svg
+  Cache-Control: public, max-age=86400
+/*.png
+  Cache-Control: public, max-age=86400
+/*.webp
+  Cache-Control: public, max-age=86400
+/*.ico
+  Cache-Control: public, max-age=86400
+
+# HTML — always revalidate so new deploys show up immediately.
+/*
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
