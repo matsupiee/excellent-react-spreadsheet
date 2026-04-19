@@ -9,8 +9,7 @@
 #        CLOUDFLARE_API_TOKEN   = <the token>
 #        CLOUDFLARE_ACCOUNT_ID  = <your Cloudflare account id>
 #
-# After that, each push to main triggers a production deploy, and each PR
-# gets a preview deploy URL posted as a check status.
+# After that, each push to main triggers a production deploy.
 
 name: Deploy site
 
@@ -22,13 +21,6 @@ on:
       - 'packages/core/**'
       - 'packages/tailwind/**'
       - 'pnpm-lock.yaml'
-      - '.github/workflows/deploy-site.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'apps/site/**'
-      - 'packages/core/**'
-      - 'packages/tailwind/**'
       - '.github/workflows/deploy-site.yml'
   workflow_dispatch:
 
@@ -47,7 +39,6 @@ jobs:
     permissions:
       contents: read
       deployments: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@v4
 
@@ -71,8 +62,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           command: >
             pages deploy apps/site/.vitepress/dist
             --project-name=${{ env.PROJECT_NAME }}
-            --branch=${{ github.head_ref || github.ref_name }}
+            --branch=main
