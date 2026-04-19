@@ -45,13 +45,22 @@ function renderSelectEditor<Row, Value>(
       autoFocus
       value={selectValue}
       onChange={(event) => {
+        // Commit + move down on every option pick. The native <select>'s
+        // `change` event is the only reliable cross-browser signal that the
+        // user has chosen an option — Chrome consumes Enter while the dropdown
+        // is open without firing a bubbled `keydown`, so relying on keydown
+        // alone silently breaks the keyboard-pick path.
         const idx = event.target.value === '' ? -1 : Number.parseInt(event.target.value, 10);
         if (idx === -1 || Number.isNaN(idx)) {
           ctx.onChange(null);
+          ctx.onCommit('down');
           return;
         }
         const option = options[idx];
-        if (option !== undefined) ctx.onChange(option.value);
+        if (option !== undefined) {
+          ctx.onChange(option.value);
+          ctx.onCommit('down');
+        }
       }}
       onBlur={() => {
         ctx.onCommit('none');

@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { Spreadsheet } from './Spreadsheet.js';
 import { defineColumns } from './columns/defineColumns.js';
+import { selectColumn } from './columns/selectColumn.js';
 import { textColumn } from './columns/textColumn.js';
 import type { ChangeEvent, ColumnDef } from './types.js';
 
@@ -53,6 +54,53 @@ function MultiHarness({ initial, viewportHeight }: MultiHarnessProps): ReactElem
       value={rows}
       onChange={onChange}
       columns={multiColumns}
+      getRowKey={(row) => row.id}
+      rowHeight={28}
+      maxHeight={viewportHeight}
+    />
+  );
+}
+
+type Status = 'draft' | 'published' | 'archived';
+
+type SelectRow = {
+  id: string;
+  status: Status | null;
+};
+
+const statusOptions = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'published', label: 'Published' },
+  { value: 'archived', label: 'Archived' },
+] as const satisfies ReadonlyArray<{ value: Status; label: string }>;
+
+const selectColumns = defineColumns<SelectRow>()(
+  selectColumn<SelectRow, 'status', Status>({
+    key: 'status',
+    title: 'Status',
+    options: statusOptions,
+  }),
+);
+
+const makeSelectRows = (count: number): SelectRow[] =>
+  Array.from({ length: count }, (_, i) => ({ id: `id-${String(i)}`, status: 'draft' }));
+
+function SelectHarness({
+  initial,
+  viewportHeight,
+}: {
+  initial: SelectRow[];
+  viewportHeight: number;
+}): ReactElement {
+  const [rows, setRows] = useState<SelectRow[]>(initial);
+  const onChange = useCallback((next: SelectRow[], _e: ChangeEvent<SelectRow>) => {
+    setRows(next);
+  }, []);
+  return (
+    <Spreadsheet<SelectRow>
+      value={rows}
+      onChange={onChange}
+      columns={selectColumns}
       getRowKey={(row) => row.id}
       rowHeight={28}
       maxHeight={viewportHeight}
@@ -526,6 +574,49 @@ describe('<Spreadsheet> Google-Sheets-parity behaviour', () => {
     expect(cell.style.boxShadow).toContain('inset');
     // Border width remains the baseline 1px so column widths don't reflow.
     expect(cell.style.border).toContain('1px');
+  });
+
+  it('picking a select option commits the value and moves the active cell down', () => {
+    mockedViewportHeight = 200;
+    const { container } = render(
+      <SelectHarness initial={makeSelectRows(3)} viewportHeight={200} />,
+    );
+    const root = container.querySelector('[role="grid"]');
+    if (root === null) throw new Error('no grid root');
+    const rootEl = root as HTMLElement;
+
+    const cellInSelect = (row: number): HTMLElement => {
+      const tr = container.querySelector(`tr[data-row-index="${String(row)}"]`);
+      if (tr === null) throw new Error(`row ${String(row)} not rendered`);
+      const cell = tr.querySelector('td[role="gridcell"]');
+      if (!(cell instanceof HTMLElement)) throw new Error('cell missing');
+      return cell;
+    };
+
+    act(() => {
+      fireEvent.mouseDown(cellInSelect(0));
+    });
+    act(() => {
+      fireEvent.keyDown(rootEl, { key: 'Enter' });
+    });
+    const select = cellInSelect(0).querySelector('select');
+    if (!(select instanceof HTMLSelectElement)) throw new Error('select editor not mounted');
+
+    // Pick "Archived" (index 2 in statusOptions).
+    act(() => {
+      fireEvent.change(select, { target: { value: '2' } });
+    });
+
+    // The value on row 0 should have been committed …
+    expect(cellInSelect(0).textContent).toBe('Archived');
+    // … and the active cell should have advanced to row 1.
+    const trs = Array.from(container.querySelectorAll('tr[data-row-index]'));
+    const activeRow = trs.find((tr) =>
+      Array.from(tr.querySelectorAll('td[role="gridcell"]')).some(
+        (c) => c instanceof HTMLElement && c.style.boxShadow.includes('inset'),
+      ),
+    );
+    expect(activeRow?.getAttribute('data-row-index')).toBe('1');
   });
 
   it('clicking a column header selects the entire column', () => {
