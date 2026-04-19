@@ -448,12 +448,21 @@ function SpreadsheetImpl<Row>(
           // draft with `deserialize(char)` when the column supports it; if
           // deserialize is missing, fall back to the existing value (Enter/F2
           // semantics) so we don't silently drop the keypress.
+          //
+          // preventDefault is load-bearing: React mounts the editor `<input>`
+          // and `autoFocus` moves focus before the browser dispatches the
+          // follow-up `keypress` / `beforeinput`. Without preventDefault those
+          // events land on the freshly-focused input and insert the character
+          // *again*, so a single 'a' keypress ends up as "aa" in the editor.
           if (!mod && e.key.length === 1) {
             const col = columnsRef.current[active.col];
-            if (col?.deserialize !== undefined) {
-              startEdit(active, col.deserialize(e.key));
-            } else {
-              startEdit(active);
+            if (col?.renderEditor !== undefined) {
+              e.preventDefault();
+              if (col.deserialize !== undefined) {
+                startEdit(active, col.deserialize(e.key));
+              } else {
+                startEdit(active);
+              }
             }
           }
       }
