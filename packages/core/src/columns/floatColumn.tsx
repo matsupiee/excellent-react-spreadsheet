@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import type { CellContext, ColumnDef, ColumnWidth, EditorContext } from '../types.js';
+import { editorInputBaseStyle } from './editor.js';
 import { clamp, isBlank } from './numeric.js';
 
 export type FloatKeysOf<Row> = {
@@ -23,6 +24,8 @@ export type FloatColumnOptions<Row, K extends FloatKeysOf<Row>> = {
 };
 
 const rightAlign = { textAlign: 'right' as const, fontVariantNumeric: 'tabular-nums' as const };
+
+const editorInputStyle = { ...editorInputBaseStyle, ...rightAlign };
 
 export const parseFloatInput = (
   raw: string,
@@ -67,9 +70,10 @@ function renderFloatEditor<Row>(
     <input
       type="text"
       inputMode="decimal"
+      size={1}
       autoFocus
       value={display}
-      style={rightAlign}
+      style={editorInputStyle}
       onChange={(event) => {
         const parsed = parseFloatInput(event.target.value, min, max);
         if (parsed.ok) ctx.onChange(parsed.value);

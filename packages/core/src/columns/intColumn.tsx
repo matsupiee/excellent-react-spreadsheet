@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import type { CellContext, ColumnDef, ColumnWidth, EditorContext } from '../types.js';
+import { editorInputBaseStyle } from './editor.js';
 import { clamp, isBlank } from './numeric.js';
 
 export type IntegerKeysOf<Row> = {
@@ -21,6 +22,8 @@ export type IntColumnOptions<Row, K extends IntegerKeysOf<Row>> = {
 };
 
 const rightAlign = { textAlign: 'right' as const, fontVariantNumeric: 'tabular-nums' as const };
+
+const editorInputStyle = { ...editorInputBaseStyle, ...rightAlign };
 
 export const parseIntegerInput = (
   raw: string,
@@ -49,9 +52,10 @@ function renderIntEditor<Row>(
     <input
       type="text"
       inputMode="numeric"
+      size={1}
       autoFocus
       value={display}
-      style={rightAlign}
+      style={editorInputStyle}
       onChange={(event) => {
         const parsed = parseIntegerInput(event.target.value, min, max);
         if (parsed.ok) ctx.onChange(parsed.value);

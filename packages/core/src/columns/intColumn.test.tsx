@@ -115,6 +115,30 @@ describe('intColumn', () => {
     expect(el).toHaveStyle({ textAlign: 'right' });
   });
 
+  it('editor input uses size=1 + width:100% so narrow columns do not widen on edit', () => {
+    const column = intColumn<Row, 'age'>({ key: 'age', title: 'Age' });
+    const renderEditor = column.renderEditor;
+    if (renderEditor === undefined) throw new Error('renderEditor missing');
+
+    const { container } = render(
+      <>
+        {renderEditor({
+          value: 5,
+          row: makeRow({ age: 5 }),
+          rowIndex: 0,
+          address,
+          onChange: () => {},
+          onCommit: () => {},
+          onCancel: () => {},
+        })}
+      </>,
+    );
+    const input = container.querySelector('input');
+    expect(input).not.toBeNull();
+    expect(input?.getAttribute('size')).toBe('1');
+    expect(input).toHaveStyle({ width: '100%', minWidth: '0', boxSizing: 'border-box' });
+  });
+
   it('renders an empty span when value is null', () => {
     const column = intColumn<Row, 'score'>({ key: 'score', title: 'Score' });
     const renderCell = column.renderCell;
