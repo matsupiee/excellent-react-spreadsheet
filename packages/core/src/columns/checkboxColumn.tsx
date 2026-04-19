@@ -37,22 +37,51 @@ export const serializeCheckbox = (value: boolean | null): string => {
   return '';
 };
 
-function CheckboxDisplay({ value }: { value: boolean | null }): ReactNode {
+function CheckboxDisplay({
+  value,
+  onValueChange,
+}: {
+  value: boolean | null;
+  onValueChange?: (next: boolean | null) => void;
+}): ReactNode {
   const ref = useRef<HTMLInputElement | null>(null);
   useEffect(() => {
     if (ref.current !== null) {
       ref.current.indeterminate = value === null;
     }
   }, [value]);
+  // When the host passes `onValueChange`, the checkbox is interactive: a
+  // single click toggles the value without first entering edit mode (Google
+  // Sheets behaviour). `null`/`false` → `true`, `true` → `false`. Without
+  // `onValueChange` we render a read-only display (see ADR 0005).
+  const interactive = onValueChange !== undefined;
   return (
     <span style={centerAlign}>
-      <input ref={ref} type="checkbox" checked={value === true} readOnly tabIndex={-1} />
+      <input
+        ref={ref}
+        type="checkbox"
+        checked={value === true}
+        tabIndex={-1}
+        readOnly={!interactive}
+        onChange={
+          interactive
+            ? () => {
+                onValueChange(value !== true);
+              }
+            : undefined
+        }
+      />
     </span>
   );
 }
 
-function renderCheckboxCell<Row>({ value }: CellContext<Row, boolean | null>): ReactNode {
-  return <CheckboxDisplay value={value} />;
+function renderCheckboxCell<Row>(ctx: CellContext<Row, boolean | null>): ReactNode {
+  // Forward `onValueChange` only when the host provided one — under
+  // `exactOptionalPropertyTypes` we can't pass `undefined` through.
+  if (ctx.onValueChange === undefined) {
+    return <CheckboxDisplay value={ctx.value} />;
+  }
+  return <CheckboxDisplay value={ctx.value} onValueChange={ctx.onValueChange} />;
 }
 
 function CheckboxEditor<Row>({ ctx }: { ctx: EditorContext<Row, boolean | null> }): ReactNode {
