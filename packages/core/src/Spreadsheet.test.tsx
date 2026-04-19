@@ -1,8 +1,9 @@
 import { act, fireEvent, render } from '@testing-library/react';
 import { useCallback, useState, type ReactElement } from 'react';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { Spreadsheet } from './Spreadsheet.js';
+import { checkboxColumn } from './columns/checkboxColumn.js';
 import { defineColumns } from './columns/defineColumns.js';
 import { textColumn } from './columns/textColumn.js';
 import type { ChangeEvent, ColumnDef } from './types.js';
@@ -543,5 +544,110 @@ describe('<Spreadsheet> Google-Sheets-parity behaviour', () => {
       'tr[data-row-index] td[role="gridcell"]:nth-of-type(2)[aria-selected="true"]',
     );
     expect(selectedInCol1.length).toBe(4);
+  });
+});
+
+describe('<Spreadsheet> + checkboxColumn click-to-toggle', () => {
+  type CheckRow = { id: string; enabled: boolean | null };
+
+  const checkColumns = defineColumns<CheckRow>()(
+    checkboxColumn<CheckRow, 'enabled'>({ key: 'enabled', title: 'Enabled' }),
+  );
+
+  const readOnlyCheckColumns = defineColumns<CheckRow>()({
+    ...checkboxColumn<CheckRow, 'enabled'>({ key: 'enabled', title: 'Enabled' }),
+    readOnly: true,
+  });
+
+  type CheckHarnessProps = {
+    initial: CheckRow[];
+    columns: ColumnDef<CheckRow>[];
+    onChange?: (rows: CheckRow[]) => void;
+  };
+
+  function CheckHarness({ initial, columns: cols, onChange }: CheckHarnessProps): ReactElement {
+    const [rows, setRows] = useState<CheckRow[]>(initial);
+    const handle = useCallback(
+      (next: CheckRow[], _e: ChangeEvent<CheckRow>) => {
+        setRows(next);
+        if (onChange !== undefined) onChange(next);
+      },
+      [onChange],
+    );
+    return (
+      <Spreadsheet<CheckRow>
+        value={rows}
+        onChange={handle}
+        columns={cols}
+        getRowKey={(row) => row.id}
+        rowHeight={28}
+        maxHeight={200}
+      />
+    );
+  }
+
+  const checkboxAt = (container: HTMLElement, row: number): HTMLInputElement => {
+    const tr = container.querySelector(`tr[data-row-index="${String(row)}"]`);
+    if (tr === null) throw new Error(`row ${String(row)} not rendered`);
+    const input = tr.querySelector('input[type="checkbox"]');
+    if (!(input instanceof HTMLInputElement)) throw new Error('checkbox missing');
+    return input;
+  };
+
+  it('toggles a checkbox in an unfocused cell on a single click (null → true → false)', () => {
+    mockedViewportHeight = 200;
+    const { container } = render(
+      <CheckHarness
+        initial={[
+          { id: 'a', enabled: false },
+          { id: 'b', enabled: true },
+          { id: 'c', enabled: null },
+        ]}
+        columns={checkColumns}
+      />,
+    );
+
+    // No cell is active yet — click the checkbox in row c (indeterminate).
+    const inputC = checkboxAt(container, 2);
+    expect(inputC.indeterminate).toBe(true);
+    act(() => {
+      inputC.click();
+    });
+    // null → true
+    expect(checkboxAt(container, 2).checked).toBe(true);
+
+    // Row b (true) → false on click, still without first focusing the cell.
+    const inputB = checkboxAt(container, 1);
+    expect(inputB.checked).toBe(true);
+    act(() => {
+      inputB.click();
+    });
+    expect(checkboxAt(container, 1).checked).toBe(false);
+
+    // Row a (false) → true.
+    act(() => {
+      checkboxAt(container, 0).click();
+    });
+    expect(checkboxAt(container, 0).checked).toBe(true);
+  });
+
+  it('does not toggle when the column is readOnly', () => {
+    mockedViewportHeight = 200;
+    const onChange = vi.fn();
+    const { container } = render(
+      <CheckHarness
+        initial={[{ id: 'a', enabled: false }]}
+        columns={readOnlyCheckColumns}
+        onChange={onChange}
+      />,
+    );
+
+    const input = checkboxAt(container, 0);
+    expect(input.readOnly).toBe(true);
+    act(() => {
+      input.click();
+    });
+    // No patch is applied — readOnly path never surfaces onValueChange.
+    expect(onChange).not.toHaveBeenCalled();
   });
 });

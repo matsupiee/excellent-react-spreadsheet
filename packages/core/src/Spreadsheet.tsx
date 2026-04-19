@@ -19,6 +19,7 @@ import {
 
 import type {
   CellAddress,
+  CellContext,
   CellPatch,
   ColumnDef,
   ColumnWidth,
@@ -804,12 +805,36 @@ function SpreadsheetImpl<Row>(
                     });
                   } else {
                     const value = col.getValue(row);
-                    content =
-                      col.renderCell !== undefined
-                        ? col.renderCell({ value, row, rowIndex: r, address: addr })
-                        : value === null || value === undefined
-                          ? ''
-                          : String(value);
+                    if (col.renderCell !== undefined) {
+                      // Provide `onValueChange` only when the cell is
+                      // writable. Column-level `readOnly` may be a predicate,
+                      // so evaluate per row. Omit the key entirely (rather
+                      // than passing `undefined`) under
+                      // `exactOptionalPropertyTypes`. See ADR 0005.
+                      const ro = col.readOnly;
+                      const isReadOnly =
+                        ro === true || (typeof ro === 'function' && ro(row) === true);
+                      const ctx: CellContext<Row, unknown> = {
+                        value,
+                        row,
+                        rowIndex: r,
+                        address: addr,
+                      };
+                      if (!isReadOnly) {
+                        ctx.onValueChange = (next: unknown): void => {
+                          const prev = col.getValue(row);
+                          if (Object.is(prev, next)) return;
+                          applyPatches([{ op: 'set', address: addr, prev, next }], {
+                            reason: 'edit',
+                            label: 'edit cell',
+                            coalesceKey: `edit:${String(addr.row)}:${String(addr.col)}`,
+                          });
+                        };
+                      }
+                      content = col.renderCell(ctx);
+                    } else {
+                      content = value === null || value === undefined ? '' : String(value);
+                    }
                   }
                   return (
                     <td
