@@ -335,9 +335,17 @@ describe('<Spreadsheet> Google-Sheets-parity behaviour', () => {
     });
     // The cell currently holds "Row 1". Typing "Z" should open the editor with
     // the typed character only, not "Row 1Z".
+    //
+    // We also assert that the keydown was preventDefault'd — without that, the
+    // browser's follow-up `keypress` / `beforeinput` lands on the autofocused
+    // editor `<input>` and inserts the character a *second* time, producing
+    // "ZZ" in real browsers. jsdom doesn't dispatch that follow-up event, so
+    // the value check alone wouldn't catch the regression.
+    let defaultPrevented = false;
     act(() => {
-      fireEvent.keyDown(root, { key: 'Z' });
+      defaultPrevented = !fireEvent.keyDown(root, { key: 'Z' });
     });
+    expect(defaultPrevented).toBe(true);
     const input = cellAt(container, 1, 0).querySelector('input');
     expect(input).not.toBeNull();
     expect((input as HTMLInputElement).value).toBe('Z');
