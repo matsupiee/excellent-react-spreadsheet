@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import type { CellContext, ColumnDef, ColumnWidth, EditorContext } from '../types.js';
+import { editorInputBaseStyle } from './editor.js';
 
 export type TextColumnKey<Row> = {
   [K in keyof Row]: Row[K] extends string ? K : never;
@@ -36,10 +37,12 @@ function renderTextEditor<Row>(
   return (
     <input
       type="text"
+      size={1}
       autoFocus
       value={ctx.value}
       placeholder={placeholder}
       maxLength={maxLength}
+      style={editorInputBaseStyle}
       onChange={(event) => {
         ctx.onChange(applyMaxLength(event.target.value, maxLength));
       }}

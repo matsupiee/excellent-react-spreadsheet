@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import type { CellContext, ColumnDef, ColumnWidth, EditorContext } from '../types.js';
+import { editorInputBaseStyle } from './editor.js';
 
 export type DateKeysOf<Row> = {
   [K in keyof Row]: Row[K] extends Date | null | undefined
@@ -60,6 +61,7 @@ function renderDateEditor<Row>(
       value={display}
       min={min !== undefined ? formatIsoDate(min) : undefined}
       max={max !== undefined ? formatIsoDate(max) : undefined}
+      style={editorInputBaseStyle}
       onChange={(event) => {
         const parsed = parseDateInput(event.target.value, min, max);
         if (parsed.ok) ctx.onChange(parsed.value);

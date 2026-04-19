@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import type { CellContext, ColumnDef, ColumnWidth, EditorContext } from '../types.js';
+import { editorInputBaseStyle } from './editor.js';
 
 export type SelectOption<Value> = { value: Value; label: string };
 
@@ -44,6 +45,7 @@ function renderSelectEditor<Row, Value>(
     <select
       autoFocus
       value={selectValue}
+      style={editorInputBaseStyle}
       onChange={(event) => {
         const idx = event.target.value === '' ? -1 : Number.parseInt(event.target.value, 10);
         if (idx === -1 || Number.isNaN(idx)) {
