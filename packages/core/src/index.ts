@@ -25,8 +25,13 @@ export type { SerializedRange } from './clipboard.js';
 
 export { useSpreadsheet } from './useSpreadsheet.js';
 
+export { Spreadsheet } from './Spreadsheet.js';
+export type { SpreadsheetProps } from './Spreadsheet.js';
+
 export { createHistory } from './history.js';
 export type { HistoryEntry } from './history.js';
+
+export { defineColumns } from './columns/defineColumns.js';
 
 export { textColumn } from './columns/textColumn.js';
 export type { TextColumnKey, TextColumnOptions } from './columns/textColumn.js';
