@@ -68,19 +68,22 @@ function renderFloatEditor<Row>(
       type="text"
       inputMode="decimal"
       autoFocus
-      defaultValue={display}
+      value={display}
       style={rightAlign}
       onChange={(event) => {
         const parsed = parseFloatInput(event.target.value, min, max);
         if (parsed.ok) ctx.onChange(parsed.value);
       }}
       onBlur={() => {
-        ctx.onCommit();
+        ctx.onCommit('none');
       }}
       onKeyDown={(event) => {
         if (event.key === 'Enter') {
           event.preventDefault();
-          ctx.onCommit();
+          ctx.onCommit(event.shiftKey ? 'up' : 'down');
+        } else if (event.key === 'Tab') {
+          event.preventDefault();
+          ctx.onCommit(event.shiftKey ? 'left' : 'right');
         } else if (event.key === 'Escape') {
           event.preventDefault();
           ctx.onCancel();

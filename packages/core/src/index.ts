@@ -12,6 +12,7 @@ export type {
   ColumnDef,
   ColumnMeta,
   ColumnWidth,
+  CommitMove,
   EditorContext,
   RowMeta,
   Selection,
