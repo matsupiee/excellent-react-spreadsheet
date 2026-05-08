@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { CellAddress, CellContext, EditorContext } from '../types.js';
@@ -173,5 +173,59 @@ describe('selectColumn', () => {
     const select = screen.getByRole('combobox') as HTMLSelectElement;
     expect(select.options.length).toBe(statusOptions.length + 1);
     expect(screen.getByRole('option', { name: 'Published' })).toBeInTheDocument();
+  });
+
+  it('commits with move=down when a non-empty option is picked', () => {
+    const column = selectColumn<Row, 'status', Status>({
+      key: 'status',
+      title: 'Status',
+      options: statusOptions,
+    });
+    const renderEditor = column.renderEditor;
+    if (renderEditor === undefined) throw new Error('renderEditor missing');
+
+    const onChange = vi.fn();
+    const onCommit = vi.fn();
+    const ctx: EditorContext<Row, Status | null> = {
+      value: 'draft',
+      onChange,
+      onCommit,
+      onCancel: vi.fn(),
+      row: makeRow({ status: 'draft' }),
+      rowIndex: 0,
+      address,
+    };
+    render(<>{renderEditor(ctx)}</>);
+    const select = screen.getByRole('combobox') as HTMLSelectElement;
+    fireEvent.change(select, { target: { value: '1' } });
+    expect(onChange).toHaveBeenCalledWith('published');
+    expect(onCommit).toHaveBeenCalledWith('down');
+  });
+
+  it('commits with move=down when the empty option is picked', () => {
+    const column = selectColumn<Row, 'status', Status>({
+      key: 'status',
+      title: 'Status',
+      options: statusOptions,
+    });
+    const renderEditor = column.renderEditor;
+    if (renderEditor === undefined) throw new Error('renderEditor missing');
+
+    const onChange = vi.fn();
+    const onCommit = vi.fn();
+    const ctx: EditorContext<Row, Status | null> = {
+      value: 'draft',
+      onChange,
+      onCommit,
+      onCancel: vi.fn(),
+      row: makeRow({ status: 'draft' }),
+      rowIndex: 0,
+      address,
+    };
+    render(<>{renderEditor(ctx)}</>);
+    const select = screen.getByRole('combobox') as HTMLSelectElement;
+    fireEvent.change(select, { target: { value: '' } });
+    expect(onChange).toHaveBeenCalledWith(null);
+    expect(onCommit).toHaveBeenCalledWith('down');
   });
 });
