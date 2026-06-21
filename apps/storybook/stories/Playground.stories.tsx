@@ -166,8 +166,6 @@ const bigColumns: ColumnDef<BigRow>[] = defineColumns<BigRow>()(
   floatColumn<BigRow, 'price'>({ key: 'price', title: 'Price', width: 120, min: 0, precision: 2 }),
 );
 
-const ROW_COUNT = 10_000;
-
 const makeBigRows = (count: number): BigRow[] =>
   Array.from({ length: count }, (_, i) => ({
     id: `row-${String(i)}`,
@@ -177,10 +175,14 @@ const makeBigRows = (count: number): BigRow[] =>
     price: Math.round(((i * 13) % 10_000) / 100) + 0.99,
   }));
 
-function LargeDatasetDemo(): ReactElement {
-  // Generate once per demo mount. The controlled value is lifted into state so
-  // edits persist round-trips through the hook + virtualizer.
-  const initial = useMemo(() => makeBigRows(ROW_COUNT), []);
+function LargeDatasetDemo({
+  rowCount,
+  description,
+}: {
+  rowCount: number;
+  description: string;
+}): ReactElement {
+  const initial = useMemo(() => makeBigRows(rowCount), [rowCount]);
   const [rows, setRows] = useState<BigRow[]>(initial);
 
   const onChange = useCallback((next: BigRow[], _change: ChangeEvent<BigRow>) => {
@@ -189,11 +191,8 @@ function LargeDatasetDemo(): ReactElement {
 
   return (
     <div style={{ padding: 24, fontFamily: 'system-ui, sans-serif' }}>
-      <h2 style={{ marginTop: 0 }}>Large Dataset ({ROW_COUNT.toLocaleString()} rows)</h2>
-      <p style={{ color: '#52525b', marginTop: 4 }}>
-        10,000 行の仮想スクロール。スクロール・矢印キー・編集がレンダリング行数と無関係に
-        軽快に動作することを確認してください。
-      </p>
+      <h2 style={{ marginTop: 0 }}>Large Dataset ({rowCount.toLocaleString()} rows)</h2>
+      <p style={{ color: '#52525b', marginTop: 4 }}>{description}</p>
       <Spreadsheet<BigRow>
         value={rows}
         onChange={onChange}
@@ -216,5 +215,20 @@ export default meta;
 export const Default: StoryObj<typeof PlaygroundDemo> = {};
 
 export const LargeDataset: StoryObj<typeof LargeDatasetDemo> = {
-  render: () => <LargeDatasetDemo />,
+  render: () => (
+    <LargeDatasetDemo
+      rowCount={10_000}
+      description="10,000 行の仮想スクロール。スクロール・矢印キー・編集がレンダリング行数と無関係に 軽快に動作することを確認してください。"
+    />
+  ),
+};
+
+export const HugeDataset: StoryObj<typeof LargeDatasetDemo> = {
+  name: 'Large Dataset (100,000 rows)',
+  render: () => (
+    <LargeDatasetDemo
+      rowCount={100_000}
+      description="100,000 行 — v1.0 の公称スコープ（〜10,000 行）を超えた規模での挙動観察用。 初回生成・onChange 時の配列コピーコスト、Undo 履歴メモリ、スクロール fps の劣化度合いをここで目視する。 本番ユースケースとしてはまだ保証対象外。"
+    />
+  ),
 };
