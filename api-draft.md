@@ -104,6 +104,18 @@ type ColumnDef<Row, Value = unknown> = {
 ### 2.3 エディタコンテキスト
 
 ```ts
+type CellContext<Row, Value> = {
+  value: Value;
+  row: Row;
+  rowIndex: number;
+  address: CellAddress;
+  // 表示モードのまま値を書き換えるためのフック（optional）。
+  // `<Spreadsheet>` は、そのセルが書き込み可能なときだけ提供する
+  // （列 `readOnly` が真、または predicate が該当行で true を返すときは undefined）。
+  // `checkboxColumn` のような「1 クリックで切り替わる」列で利用。詳細は ADR 0005。
+  onValueChange?: (next: Value) => void;
+};
+
 type EditorContext<Row, Value> = {
   value: Value;
   onChange: (next: Value) => void; // コミット待ち

@@ -102,6 +102,7 @@ describe('checkboxColumn', () => {
     expect(input).not.toBeNull();
     expect(input).toBeChecked();
     expect(input?.indeterminate).toBe(false);
+    expect(input?.readOnly).toBe(true);
 
     rerender(<>{renderCell(makeCtx(false))}</>);
     input = container.querySelector('input');
@@ -112,6 +113,40 @@ describe('checkboxColumn', () => {
     input = container.querySelector('input');
     expect(input).not.toBeChecked();
     expect(input?.indeterminate).toBe(true);
+  });
+
+  it('renderCell toggles via onValueChange when provided: null/false → true, true → false', () => {
+    const column = checkboxColumn<Row, 'premium'>({ key: 'premium', title: 'Premium' });
+    const renderCell = column.renderCell;
+    if (renderCell === undefined) throw new Error('renderCell missing');
+
+    const onValueChange = vi.fn<(next: boolean | null) => void>();
+    const makeCtx = (value: boolean | null): CellContext<Row, boolean | null> => ({
+      value,
+      row: makeRow({ premium: value }),
+      rowIndex: 0,
+      address,
+      onValueChange,
+    });
+
+    const { rerender, container } = render(<>{renderCell(makeCtx(null))}</>);
+    let input = container.querySelector('input');
+    if (input === null) throw new Error('input missing');
+    expect(input.readOnly).toBe(false);
+    input.click();
+    expect(onValueChange).toHaveBeenLastCalledWith(true);
+
+    rerender(<>{renderCell(makeCtx(false))}</>);
+    input = container.querySelector('input');
+    if (input === null) throw new Error('input missing');
+    input.click();
+    expect(onValueChange).toHaveBeenLastCalledWith(true);
+
+    rerender(<>{renderCell(makeCtx(true))}</>);
+    input = container.querySelector('input');
+    if (input === null) throw new Error('input missing');
+    input.click();
+    expect(onValueChange).toHaveBeenLastCalledWith(false);
   });
 
   it('editor fires onChange with the flipped boolean and onCommit on Enter', () => {

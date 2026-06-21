@@ -32,6 +32,13 @@ export type CellContext<Row, Value> = {
   row: Row;
   rowIndex: number;
   address: CellAddress;
+  /**
+   * Write a new value for this cell without entering edit mode. Provided by
+   * `<Spreadsheet>` only when the column (and row, if `readOnly` is a
+   * predicate) is writable; `undefined` for read-only cells. Used by columns
+   * like `checkboxColumn` to toggle on a single click. See ADR 0005.
+   */
+  onValueChange?: (next: Value) => void;
 };
 
 export type CommitMove = 'down' | 'up' | 'right' | 'left' | 'none';
